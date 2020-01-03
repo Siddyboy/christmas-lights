@@ -6,8 +6,8 @@ I have 4 sets of USB fairy lights. Rated at 5 V and 1 A.
 
 Item        | Mfr        | PN            | Supplier | Cost   | Notes
 ------------|------------|---------------|----------|-------:|---
-Box         |            |               |          |        | metal/plastic. Not sure what is safest.
-Mains In    |            |               |          |        | Power inlet/fuse
+Box         |            |               |          |        | metal/plastic. Not sure what is safest. Wifi signal?
+Mains In    |            |               |          |        | Power inlet/fuse/switch?
 PSU         | Tracopower | TXL 035-0512D | RS Comp  | £59-14 | 35 W, 5/12 VDC (for lights/arduino). Check currents.
 Controller  | Arduino    | ABX00021      | Amazon   | £37-15 | ARDUINO UNO WiFi REV2. WiFi for clock function.
 Switching   | Arduino    | A000110       | Amazon   | £32-99 | ARDUINO 4 RELAYS SHIELD - seems good enough for lights. Check currents
