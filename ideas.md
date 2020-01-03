@@ -1,14 +1,17 @@
-# lights
-USB Christmas Lights' Controller
+# Ideas for USB Christmas Lights' Controller
 
-- Existing USB lights are 5 V at 1 A
+I have 4 sets of USB fairy lights. Rated at 5 V and 1 A.
 
-- Box
-- Mains Power inlet/fuse
-- Traco 5 VDC (for lights) and 12 VDC (for Arduino) PSU.
-- Arduino UNO - wifi? for time - see clock below
-- Arduino 4 x relay shield - seems good enough for lights.
-- Startech (CPC) 4x USB 2.0 Female to 2x 10 Pin IDC Motherboard Header Female Slot Plate Adaptor -  USBPLATE4
+## Proposed components
+
+Item        | Mfr        | PN            | Supplier | Cost   | Notes
+------------|------------|---------------|----------|-------:|---
+Box         |            |               |          |        | metal/plastic. Not sure what is safest.
+Mains In    |            |               |          |        | Power inlet/fuse
+PSU         | Tracopower | TXL 035-0512D | RS Comp  | £59-14 | 35 W, 5/12 VDC (for lights/arduino). Check currents.
+Controller  | Arduino    | ABX00021      | Amazon   | £37-15 | ARDUINO UNO WiFi REV2. WiFi for clock function.
+Switching   | Arduino    | A000110       | Amazon   | £32-99 | ARDUINO 4 RELAYS SHIELD - seems good enough for lights. Check currents
+Connect out | Startech   | USBPLATE4     | Amazon   |  £5-65 | 4 Port USB A Female Slot Plate Adapter.
 
 Basically to power lights on and off at set times.
 
