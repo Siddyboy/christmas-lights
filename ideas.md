@@ -27,6 +27,6 @@ Include indicator LEDs in box so lights don't have to be connected for testing?
 
 Power LED lihgt from traco visible?
 
-Other permanently on UBS charger socket?
+Other permanently on UBS charger socket? Use the 2 USB A Startech thing in Sid's garage. Wire direct from PSU.
 
 a
