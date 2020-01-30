@@ -13,6 +13,8 @@ Controller  | Arduino    | ABX00021      | Amazon   | £37-15 | ARDUINO UNO WiFi
 Switching   | Arduino    | A000110       | Amazon   | £32-99 | ARDUINO 4 RELAYS SHIELD - seems good enough for lights. Check currents
 Connect out | Startech   | USBPLATE4     | Amazon   |  £5-65 | 4 Port USB A Female Slot Plate Adapter.
 
+## Ideas
+
 Basically to power lights on and off at set times.
 
 But could add subtle clock functionality.
@@ -27,6 +29,22 @@ Include indicator LEDs in box so lights don't have to be connected for testing?
 
 Power LED lihgt from traco visible?
 
-Other permanently on UBS charger socket? Use the 2 USB A Startech thing in Sid's garage. Wire direct from PSU.
+Other permanently on UBS charger socket? Use the 2 USB A Startech thing in Sid's garage. Wire direct from PSU. But where to get the extra current from as we're already a limit of 5 v PSU. See below.
 
-a
+## Power calculations
+
+### 5 V
+
+4 off USB lights at 5 V and 1 A
+
+Total = 20 W and 4 A
+
+### 12 V
+
+Arduino 7-12 V, 40 mA per IO pin. So < 1 A.
+
+Total =  12 V x 1 A = 12 W
+
+### Total power
+
+Total = 32 W
