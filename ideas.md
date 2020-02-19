@@ -15,6 +15,18 @@ Switching       | Arduino    | A000110       | Amazon   | £32-99 | ARDUINO 4 RE
 Switched out    | Startech   | USBPLATE4     | Amazon   |  £5-65 | 4 Port USB A Female Slot Plate Adapter. For Xmas lights.
 Fixed out       | Startech   | unknown       | Garage!  |  £0-00 | 2 Port USB A Female Slot Plate Adapter. For phones.
 
+## Obtained components
+
+Item            | Mfr        | PN            | Supplier     | Cost   | Notes
+----------------|------------|---------------|--------------|--------|---
+Box             |            |               |              |        | 
+Mains In        |            |               |              |        | 
+PSU alternative | Tracopower | TXL 060-0512DI| Ebay         | £19-99 | Second hand. Slightly battered.
+Controller      | Arduino    | ABX00021      | Ebay (Rapid) | £42-22 | 
+Switching       | Arduino    | A000110       | Ebay (Rapid) | £23-19 | 
+Switched out    | Startech   | USBPLATE4     | Ebay         |  £5-04 | 
+Fixed out       | Startech   | unknown       | Garage!      |  £0-00 | 
+
 ## Ideas
 
 Basically to power lights on and off at set times.
