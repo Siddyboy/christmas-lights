@@ -1,6 +1,9 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
+#include <RTCZero.h> \\ RTC.h or RTCZero.h?
+
+// Don't confuse connection to WiFi with connection to a server.
 
 int status = WL_IDLE_STATUS;
 
@@ -15,6 +18,7 @@ IPAddress timeServer(xxx, y, zzz, aaa);
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
+RTCZero rtc;
 WiFiUDP Udp;
 
 void setup() {
@@ -33,9 +37,9 @@ void setup() {
   Serial.println("\nStarting connection to server...");
   Udp.begin(localUdpPort);
   
-  start rtc
+  rtc.begin();
 
-  find network (wifi)
+  
   get time from ntp server
   set time to rtc
 }
