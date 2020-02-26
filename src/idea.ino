@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
-#include <RTCZero.h> \\ RTC.h or RTCZero.h?
+#include <RTCZero.h>  // RTC.h or RTCZero.h?
 
 // Don't confuse connection to WiFi with connection to a server.
 
