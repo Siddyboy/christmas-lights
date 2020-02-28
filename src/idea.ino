@@ -1,13 +1,18 @@
+#include <Arduino.h>
 #include <SPI.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
-#include <RTCZero.h>  // RTC.h or RTCZero.h?
+#include <DS3231.h>
+// #include <RTCZero.h>  // RTC.h or RTCZero.h?
 
 // Don't confuse connection to WiFi with connection to a server.
 
+#include "sub/arduino_secrets.h"
+
 int status = WL_IDLE_STATUS;
 
-#include "arduino_secrets.h"
+
+
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
 
