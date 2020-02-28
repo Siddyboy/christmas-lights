@@ -4,27 +4,22 @@
 #include <WiFiUdp.h>
 #include <DS3231.h>
 // #include <RTCZero.h>  // RTC.h or RTCZero.h?
-
 // Don't confuse connection to WiFi with connection to a server.
-
 #include "sub/arduino_secrets.h"
 
 int status = WL_IDLE_STATUS;
-
-
-
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
 
 unsigned int localUdpPort = 2390;
 
-IPAddress timeServer(xxx, y, zzz, aaa);
+IPAddress timeServer(129, 6, 15, 28);
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
-RTCZero rtc;
-WiFiUDP Udp;
+// RTCZero rtc;
+// WiFiUDP Udp;
 
 void setup() {
   Serial.begin(9600); //might need the while (!Serial) {;} thing here for USB ports. Try without first.
@@ -45,13 +40,13 @@ void setup() {
   rtc.begin();
 
   
-  get time from ntp server
-  set time to rtc
+//  get time from ntp server
+//  set time to rtc
 }
 
 void loop
-  timed on/off
-  set hours plus randomness
+//  timed on/off
+//  set hours plus randomness
   
   at hours (when on (except 4 pm)) 
     turn off for few seconds
