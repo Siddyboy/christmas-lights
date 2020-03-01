@@ -4,7 +4,7 @@
 #include <DS3231.h>
 // #include <RTCZero.h>  // RTC.h or RTCZero.h?
 // Don't confuse connection to WiFi with connection to a server.
-#include "sub/arduino_secrets.h"
+#include "arduino_secrets.h"
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
@@ -23,14 +23,15 @@ WiFiUDP Udp;
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial) {
-    ;
-  }
-  Serial.println("Hello Simon");
 
   if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Comms with WiFi module failed!");
+    Serial.println("Communication with WiFi module failed!");
     while (true);
+  }
+  
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("Please upgrade the firmware");
   }
   
   while (status != WL_CONNECTED) {

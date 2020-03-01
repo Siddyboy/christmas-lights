@@ -2,5 +2,5 @@
     "board": "arduino:megaavr:uno2018",
     "configuration": "mode=off",
     "port": "/dev/ttyACM0",
-    "sketch": "src/idea.ino"
+    "sketch": "lights.ino"
 }
