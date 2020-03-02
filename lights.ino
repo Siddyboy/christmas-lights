@@ -1,9 +1,7 @@
-#include <SPI.h>
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
-#include <DS3231.h>
-// #include <RTCZero.h>  // RTC.h or RTCZero.h?
-// Don't confuse connection to WiFi with connection to a server.
+#include <Time.h>
+#include <TimeAlarms.h>
 #include "arduino_secrets.h"
 
 char ssid[] = SECRET_SSID;
@@ -15,11 +13,6 @@ unsigned int localPort = 2390;
 // IPAddress timeServer(129, 6, 15, 28); //time.nist.gov
 IPAddress timeServer(143, 210, 16, 201); //0.uk.pool.ntp.org
 
-const int NTP_PACKET_SIZE = 48;
-
-byte packetBuffer[NTP_PACKET_SIZE];
-
-// RTCZero rtc;
 WiFiUDP Udp;
 
 void setup() {
@@ -47,66 +40,71 @@ void setup() {
 
   Serial.println("\nStarting connection to server...");
   Udp.begin(localPort);
-  
-//  rtc.begin();
+  setSyncProvider(getNtpTime);
 
-  
-//  get time from ntp server
-//  set time to rtc
 }
+
+time_t prevDisplay = 0;
 
 void loop() {
-  sendNTPpacket(timeServer);
-  delay(1000);
-  if (Udp.parsePacket()) {
-    Serial.println("packet received");
-    Udp.read(packetBuffer, NTP_PACKET_SIZE);
-    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
-    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
-    unsigned long secsSince1900 = highWord <<16 | lowWord;
-    Serial.print("Seconds since Jan 1 1900 = ");
-    Serial.println(secsSince1900);
-    
-    const unsigned long seventyYears = 2208988800UL;
-    unsigned long epoch = secsSince1900 - seventyYears;
-    Serial.print("Unix time = ");
-    Serial.println(epoch);
-
-    Serial.print("The UTC time is ");
-    Serial.print((epoch % 86400L) / 3600);
-    Serial.print(':');
-    if (((epoch % 3600) / 60) < 10) {
-      Serial.print('0');
+  if (timeStatus() != timeNotSet) {
+    if (now() != prevDisplay) {
+      prevDisplay = now();
+      digitalClockDisplay();
     }
-    Serial.print((epoch % 3600) / 60);
-    Serial.print(':');
-    if ((epoch % 60) < 10) {
-      Serial.print('0');
-    }
-    Serial.println(epoch % 60);
   }
-
-  delay(10000);
 }
-//  timed on/off
-//  set hours plus randomness
-  
-//  at hours (when on (except 4 pm)) 
-//   turn off for few seconds
-//    blink hour 'chimes' - see big ben timing!
-    
-//  at quarters (when on)
-//   just blink off once (15 min past)
-//    blink off twice (30 past)
-//    blink off thrice (45 past).
-    
-//  at 4pm
-//    turn off for a few seconds
-//    blink tea-for-two rhythm.
-    
-//  at 3am get time from ntp and reset rtc
 
-unsigned long sendNTPpacket(IPAddress& address) {
+void digitalClockDisplay() {
+  // digital clock display of the time
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" ");
+  Serial.print(day());
+  Serial.print(" ");
+  Serial.print(month());
+  Serial.print(" ");
+  Serial.print(year()); 
+  Serial.println(); 
+}
+
+void printDigits(int digits) {
+  // utility for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
+/*-------- NTP code ----------*/
+
+const int NTP_PACKET_SIZE = 48;
+byte packetBuffer[NTP_PACKET_SIZE];
+
+time_t getNtpTime() {
+  while (Udp.parsePacket() > 0); 
+  Serial.println("Transmit NTP Request");
+  sendNTPpacket(timeServer);
+  uint32_t beginWait = millis();
+  while (millis() - beginWait < 1500) {
+    int size = Udp.parsePacket();
+    if (size >= NTP_PACKET_SIZE) {
+      Serial.println("Receive NTP Response");
+      Udp.read(packetBuffer, NTP_PACKET_SIZE);
+      unsigned long secsSince1900;
+      secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
+      secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
+      secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
+      secsSince1900 |= (unsigned long)packetBuffer[43];
+      return secsSince1900 - 2208988800UL;
+    }
+  }
+  Serial.println("No NTP Response :-(");
+  return 0;
+}
+
+unsigned long sendNTPpacket(IPAddress & address) {
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
   packetBuffer[0] = 0b11100011;
   packetBuffer[1] = 0;
