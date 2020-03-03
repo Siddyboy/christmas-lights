@@ -43,7 +43,8 @@ void setup() {
   setSyncProvider(getNtpTime);
 
 // use setSyncInterval! from time library to keep regular daily NTP synch doofus.  
-  
+// ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
+// differnet blink codes for differnet enrrors!
 }
 
 time_t prevDisplay = 0;
