@@ -41,8 +41,9 @@ void setup() {
   Serial.println("\nStarting connection to server...");
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
+//  setSyncInterval(51); // In seconds. Is this needed as default is every 5 mintues anyway? 
 
-// use setSyncInterval! from time library to keep regular daily NTP synch doofus.  
+  Alarm.timerRepeat(20, quarterPastChime);
 // ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
 // differnet blink codes for differnet enrrors!
 }
@@ -51,10 +52,8 @@ time_t prevDisplay = 0;
 
 void loop() {
   if (timeStatus() != timeNotSet) {
-    if (now() != prevDisplay) {
-      prevDisplay = now();
-      digitalClockDisplay();
-    }
+    digitalClockDisplay();
+    Alarm.delay(1000);
   }
 }
 
@@ -70,6 +69,16 @@ void digitalClockDisplay() {
   Serial.print(" ");
   Serial.print(year()); 
   Serial.println(); 
+}
+
+/*-------- Chime Alarms --------*/
+
+void quarterPastChime() {
+  Serial.println("Quarter Past Chime.");
+}
+
+void halfPastChime() {
+  Serial.println("Half Past Chime.");
 }
 
 void printDigits(int digits) {
