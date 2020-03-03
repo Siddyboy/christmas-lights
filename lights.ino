@@ -42,6 +42,8 @@ void setup() {
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
+// use setSyncInterval! from time library to keep regular daily NTP synch doofus.  
+  
 }
 
 time_t prevDisplay = 0;
