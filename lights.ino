@@ -19,19 +19,16 @@ void setup() {
   Serial.begin(9600);
 
   if (WiFi.status() == WL_NO_MODULE) {
-    digitalClockDisplay();
     Serial.println("Communication with WiFi module failed!");
     while (true);
   }
   
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    digitalClockDisplay();
     Serial.println("Please upgrade the firmware");
   }
   
   while (status != WL_CONNECTED) {
-    digitalClockDisplay();
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
@@ -44,9 +41,11 @@ void setup() {
   Serial.println("\nStarting connection to server...");
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
-//  setSyncInterval(51); // In seconds. Is this needed as default is every 5 mintues anyway? 
 
-  Alarm.timerRepeat(20, quarterPastChime);
+  Alarm.alarmRepeat(21, 15, 0, quarterPastChime);
+  Alarm.alarmRepeat(21, 30, 0, halfPastChime);
+  Alarm.alarmRepeat(21, 45, 0, quarterToChime);
+  Alarm.alarmRepeat(21, 00, 0, hour21Chime);
 // ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
 // differnet blink codes for differnet enrrors!
 }
@@ -55,7 +54,6 @@ time_t prevDisplay = 0;
 
 void loop() {
   if (timeStatus() != timeNotSet) {
-    digitalClockDisplay();
     Alarm.delay(1000);
   }
 }
@@ -71,19 +69,30 @@ void digitalClockDisplay() {
   Serial.print(month());
   Serial.print(" ");
   Serial.print(year()); 
-  Serial.println(); 
+  Serial.print(" - "); 
 }
 
 /*-------- Chime Alarms --------*/
 
 void quarterPastChime() {
+  digitalClockDisplay();
   Serial.println("Quarter Past Chime.");
 }
 
 void halfPastChime() {
+  digitalClockDisplay();
   Serial.println("Half Past Chime.");
 }
 
+void quarterToChime() {
+  digitalClockDisplay();
+  Serial.println("Quater to Chime.");
+}
+
+void hour21Chime() {
+  digitalClockDisplay();
+  Serial.println("Dongs at 9pm.");
+}
 void printDigits(int digits) {
   // utility for digital clock display: prints preceding colon and leading 0
   Serial.print(":");
@@ -98,7 +107,7 @@ const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
 time_t getNtpTime() {
-  while (Udp.parsePacket() > 0); 
+  while (Udp.parsePacket() > 0);
   Serial.println("Transmit NTP Request");
   sendNTPpacket(timeServer);
   uint32_t beginWait = millis();
