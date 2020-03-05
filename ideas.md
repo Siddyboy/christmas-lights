@@ -7,7 +7,7 @@ I have 4 sets of USB fairy lights. Rated at 5 V and 1 A.
 Item            | Mfr        | PN            | Supplier | Cost   | Notes
 ----------------|------------|---------------|----------|--------|---
 Box             |            |               |          |        | metal/plastic. Not sure what is safest. Wifi signal?
-Mains In        |            |               |          |        | Power inlet/fuse/switch?
+Mains In        | Schurter   | DD11???       | RS Comp  |   <£10 | Schurter DD11 Series - 2 pole, single fuse, illuminated.
 PSU             | Tracopower | TXL 035-0512D | RS Comp  | £59-14 | 35 W, 5/12 VDC (for lights/arduino). Check currents.
 PSU alternative | Tracopower | TXL 060-0512DI| RS Comp  | £81-66 | 60 W, 5/12 VDC (for lights/arduino and extra phone charge.
 Controller      | Arduino    | ABX00021      | Amazon   | £37-15 | ARDUINO UNO WiFi REV2. WiFi for clock function.
