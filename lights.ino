@@ -19,16 +19,19 @@ void setup() {
   Serial.begin(9600);
 
   if (WiFi.status() == WL_NO_MODULE) {
+    digitalClockDisplay();
     Serial.println("Communication with WiFi module failed!");
     while (true);
   }
   
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    digitalClockDisplay();
     Serial.println("Please upgrade the firmware");
   }
   
   while (status != WL_CONNECTED) {
+    digitalClockDisplay();
     Serial.print("Attempting to connect to SSID: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
