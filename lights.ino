@@ -1,7 +1,7 @@
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
 #include <Time.h>
-#include <TimeAlarms.h>
+#include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
 char ssid[] = SECRET_SSID;
@@ -42,10 +42,15 @@ void setup() {
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
-  Alarm.alarmRepeat(21, 15, 0, quarterPastChime);
-  Alarm.alarmRepeat(21, 30, 0, halfPastChime);
-  Alarm.alarmRepeat(21, 45, 0, quarterToChime);
-  Alarm.alarmRepeat(21, 00, 0, hour21Chime);
+  for(int i = 0; i <= 23; i++) {
+    Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
+    Alarm.alarmRepeat(i, 30, 0, halfPastChime);
+    Alarm.alarmRepeat(i, 45, 0, quarterToChime);
+    Alarm.alarmRepeat(i, 0, 0, hourChime);
+  }
+  
+  Alarm.alarmRepeat(20, 28, 4, hourChime);
+
 // ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
 // differnet blink codes for differnet enrrors!
 }
@@ -54,6 +59,7 @@ time_t prevDisplay = 0;
 
 void loop() {
   if (timeStatus() != timeNotSet) {
+    digitalClockDisplay();
     Alarm.delay(1000);
   }
 }
@@ -68,8 +74,7 @@ void digitalClockDisplay() {
   Serial.print(" ");
   Serial.print(month());
   Serial.print(" ");
-  Serial.print(year()); 
-  Serial.print(" - "); 
+  Serial.println(year());
 }
 
 /*-------- Chime Alarms --------*/
@@ -89,10 +94,10 @@ void quarterToChime() {
   Serial.println("Quater to Chime.");
 }
 
-void hour21Chime() {
-  digitalClockDisplay();
-  Serial.println("Dongs at 9pm.");
+void hourChime() {
+  Serial.print("Hour Dongs");
 }
+
 void printDigits(int digits) {
   // utility for digital clock display: prints preceding colon and leading 0
   Serial.print(":");
@@ -142,6 +147,8 @@ unsigned long sendNTPpacket(IPAddress & address) {
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
   Udp.endPacket();
 }
+
+/*-------- WIFI code --------*/
 
 void printWifiStatus() {
   Serial.print("SSID: ");
