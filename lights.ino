@@ -4,6 +4,14 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
+bool lightsOn = false;
+const unsigned long del = 100;
+
+const int USB1 = 4;
+const int USB2 = 7;
+const int USB3 = 8;
+const int USB4 = 12;
+
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
 int status = WL_IDLE_STATUS;
@@ -16,6 +24,11 @@ IPAddress timeServer(143, 210, 16, 201); //0.uk.pool.ntp.org
 WiFiUDP Udp;
 
 void setup() {
+  pinMode(USB1, OUTPUT);
+  pinMode(USB2, OUTPUT);
+  pinMode(USB3, OUTPUT);
+  pinMode(USB4, OUTPUT);
+  
   Serial.begin(9600);
 
   if (WiFi.status() == WL_NO_MODULE) {
@@ -43,13 +56,14 @@ void setup() {
   setSyncProvider(getNtpTime);
 
   for(int i = 0; i <= 23; i++) {
+    Alarm.alarmRepeat(i, 0, 0, hourChime);
     Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
     Alarm.alarmRepeat(i, 30, 0, halfPastChime);
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
-    Alarm.alarmRepeat(i, 0, 0, hourChime);
-  }
+  }  
   
-  Alarm.alarmRepeat(20, 28, 4, hourChime);
+  Alarm.alarmRepeat(21, 20, 0, lightsTurnOn);
+  Alarm.alarmRepeat(22, 20, 0, lightsTurnOff);
 
 // ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
 // differnet blink codes for differnet enrrors!
@@ -64,6 +78,8 @@ void loop() {
   }
 }
 
+/*-------- Digital Clock Code --------*/
+
 void digitalClockDisplay() {
   // digital clock display of the time
   Serial.print(hour());
@@ -74,28 +90,9 @@ void digitalClockDisplay() {
   Serial.print(" ");
   Serial.print(month());
   Serial.print(" ");
-  Serial.println(year());
-}
-
-/*-------- Chime Alarms --------*/
-
-void quarterPastChime() {
-  digitalClockDisplay();
-  Serial.println("Quarter Past Chime.");
-}
-
-void halfPastChime() {
-  digitalClockDisplay();
-  Serial.println("Half Past Chime.");
-}
-
-void quarterToChime() {
-  digitalClockDisplay();
-  Serial.println("Quater to Chime.");
-}
-
-void hourChime() {
-  Serial.print("Hour Dongs");
+  Serial.print(year());
+  Serial.print(" ");
+  Serial.println(lightsOn);
 }
 
 void printDigits(int digits) {
@@ -104,6 +101,85 @@ void printDigits(int digits) {
   if(digits < 10)
     Serial.print('0');
   Serial.print(digits);
+}
+
+/*-------- Light Control Alarms --------*/
+
+void quarterPastChime() {
+  if(lightsOn == true) {
+    sweepOff();
+    delay(500);
+    sweepOn();
+    Serial.println("Quarter Past Chime.");
+  }
+}
+
+void halfPastChime() {
+  if(lightsOn == true) {
+    sweepOff();
+    delay(500);
+    sweepOn();
+    delay(500);
+    sweepOff();
+    delay(500);
+    sweepOn();
+    digitalClockDisplay();
+    Serial.println("Half Past Chime.");
+  }
+}
+
+void quarterToChime() {
+  if(lightsOn == true) {
+    sweepOff();
+    delay(500);
+    sweepOn();
+    delay(500);
+    sweepOff();
+    delay(500);
+    sweepOn();
+    delay(500);
+    sweepOff();
+    delay(500);
+    sweepOn();
+    digitalClockDisplay();
+    Serial.println("Quater to Chime.");
+  }
+}
+
+void hourChime() {
+  Serial.print("Hour Dongs");
+}
+
+void lightsTurnOn() {
+  lightsOn = true;
+  sweepOn();
+  Serial.print("Lights turned on!");
+}
+
+void lightsTurnOff() {
+  lightsOn = false;
+  sweepOff();
+  Serial.print("Lights turned off!");
+}
+
+void sweepOn() {
+  digitalWrite(USB1, HIGH);
+  delay(del);
+  digitalWrite(USB2, HIGH);
+  delay(del);
+  digitalWrite(USB3, HIGH);
+  delay(del);
+  digitalWrite(USB4, HIGH);
+}
+
+void sweepOff() {
+  digitalWrite(USB1, LOW);
+  delay(del);
+  digitalWrite(USB2, LOW);
+  delay(del);
+  digitalWrite(USB3, LOW);
+  delay(del);
+  digitalWrite(USB4, LOW);
 }
 
 /*-------- NTP code ----------*/
