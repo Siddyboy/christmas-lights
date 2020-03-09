@@ -5,6 +5,10 @@
 #include "arduino_secrets.h"
 
 bool lightsOn = false;
+const int onHour = 6;
+const int onMinute = 0;
+const int offHour = 22;
+const int offMinute = 37;
 const unsigned long del = 100;
 
 const int USB1 = 4;
@@ -62,14 +66,20 @@ void setup() {
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
   }  
   
-  Alarm.alarmRepeat(21, 20, 0, lightsTurnOn);
-  Alarm.alarmRepeat(22, 20, 0, lightsTurnOff);
+  Alarm.alarmRepeat(onHour, onMinute, 0, allOn);
+  Alarm.alarmRepeat(offHour, offMinute, 0, allOff);
+  
+  // LOGIC NEEDS SOME WORK!!!
+  if((hour() > onHour && minute() > onMinute) && (hour() < offHour && minute() < offMinute)) {
+    allOn();
+  }
+  else {
+    allOff();
+  }
 
 // ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
 // differnet blink codes for differnet enrrors!
 }
-
-time_t prevDisplay = 0;
 
 void loop() {
   if (timeStatus() != timeNotSet) {
@@ -85,14 +95,16 @@ void digitalClockDisplay() {
   Serial.print(hour());
   printDigits(minute());
   printDigits(second());
-  Serial.print(" ");
-  Serial.print(day());
-  Serial.print(" ");
-  Serial.print(month());
-  Serial.print(" ");
-  Serial.print(year());
-  Serial.print(" ");
-  Serial.println(lightsOn);
+  Serial.print(" Status = ");
+  Serial.print(lightsOn);
+  Serial.print(", On = ");
+  Serial.print(onHour);
+  Serial.print(":");
+  Serial.print(onMinute);
+  Serial.print(", Off = ");
+  Serial.print(offHour);
+  Serial.print(":");
+  Serial.println(offMinute);
 }
 
 void printDigits(int digits) {
@@ -107,22 +119,22 @@ void printDigits(int digits) {
 
 void quarterPastChime() {
   if(lightsOn == true) {
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     Serial.println("Quarter Past Chime.");
   }
 }
 
 void halfPastChime() {
   if(lightsOn == true) {
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     delay(500);
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     digitalClockDisplay();
     Serial.println("Half Past Chime.");
   }
@@ -130,17 +142,17 @@ void halfPastChime() {
 
 void quarterToChime() {
   if(lightsOn == true) {
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     delay(500);
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     delay(500);
-    sweepOff();
+    allOff();
     delay(500);
-    sweepOn();
+    allOn();
     digitalClockDisplay();
     Serial.println("Quater to Chime.");
   }
@@ -150,19 +162,23 @@ void hourChime() {
   Serial.print("Hour Dongs");
 }
 
+/* dud?
 void lightsTurnOn() {
   lightsOn = true;
-  sweepOn();
+  allOn();
   Serial.print("Lights turned on!");
 }
 
 void lightsTurnOff() {
   lightsOn = false;
-  sweepOff();
+  allOff();
   Serial.print("Lights turned off!");
 }
 
-void sweepOn() {
+*/
+
+void allOn() {
+  lightsOn = true;
   digitalWrite(USB1, HIGH);
   delay(del);
   digitalWrite(USB2, HIGH);
@@ -172,14 +188,15 @@ void sweepOn() {
   digitalWrite(USB4, HIGH);
 }
 
-void sweepOff() {
-  digitalWrite(USB1, LOW);
-  delay(del);
-  digitalWrite(USB2, LOW);
+void allOff() {
+  lightsOn = false;
+  digitalWrite(USB4, LOW);
   delay(del);
   digitalWrite(USB3, LOW);
   delay(del);
-  digitalWrite(USB4, LOW);
+  digitalWrite(USB2, LOW);
+  delay(del);
+  digitalWrite(USB1, LOW);
 }
 
 /*-------- NTP code ----------*/
