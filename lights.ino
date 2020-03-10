@@ -4,37 +4,35 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
-bool lightsOn = false;
-const int onHour = 6;
-const int onMinute = 0;
-const int onTime = (onHour * 60) + onMinute;
-const int offHour = 22;
-const int offMinute = 37;
-const int offTime = (offHour * 60) + offMinute;
+bool lightsOn = false;                           // Keep track of lights' status.
+// TODO(SCJK): CAPITALISE CONSTANTS!!!
+const int onHour = 22;                           // Hour for turning lights on.
+const int onMinute = 40;                         // Minute for turning lights on.
+const int onTime = (onHour * 60) + onMinute;     // Minutes past midnight to turn lights on.
 
-const unsigned long del = 100;
+const int offHour = 23;                          // Hour for turning lights off.
+const int offMinute = 26;                        // Minute for turning lights off.
+const int offTime = (offHour * 60) + offMinute;  // Minutes past midnight to turn lights off.
 
-const int USB1 = 4;
-const int USB2 = 7;
-const int USB3 = 8;
-const int USB4 = 12;
+const unsigned long del = 100;                   // A timing delay.
 
-char ssid[] = SECRET_SSID;
-char pass[] = SECRET_PASS;
-int status = WL_IDLE_STATUS;
+const int USB[] = {4, 7, 8, 12};                 // Array of pin numbers for the four relays.
 
-unsigned int localPort = 2390;
+char ssid[] = SECRET_SSID;                       // WiFi SSID from arduino_secrets.h
+char pass[] = SECRET_PASS;                       // WiFi passord from arduino_secrets.h
+int status = WL_IDLE_STATUS;                     // WiFi status.
 
-// IPAddress timeServer(129, 6, 15, 28); //time.nist.gov
-IPAddress timeServer(143, 210, 16, 201); //0.uk.pool.ntp.org
+unsigned int localPort = 2390;                   // Port for ??????? TODO(SCJK): Comment this properly.
+
+//IPAddress timeServer(129, 6, 15, 28);            //time.nist.gov
+IPAddress timeServer(143, 210, 16, 201);         //0.uk.pool.ntp.org
 
 WiFiUDP Udp;
 
 void setup() {
-  pinMode(USB1, OUTPUT);
-  pinMode(USB2, OUTPUT);
-  pinMode(USB3, OUTPUT);
-  pinMode(USB4, OUTPUT);
+  for(int i = 0; i <= 3; i++) {
+    pinMode(USB[i], OUTPUT);
+  }
   
   Serial.begin(9600);
 
@@ -62,7 +60,7 @@ void setup() {
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
-  /*---- Set alarms for clock functionality ----*/
+  /*-------- Set alarms for clock functionality --------*/
   for(int i = 0; i <= 23; i++) {
     Alarm.alarmRepeat(i, 0, 0, hourChime);
     Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
@@ -70,22 +68,31 @@ void setup() {
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
   }  
   
-  /*---- Set alarms for on and off times ----*/
+  /*-------- Set alarms for on and off times --------*/
   Alarm.alarmRepeat(onHour, onMinute, 0, allOn);
   Alarm.alarmRepeat(offHour, offMinute, 0, allOff);
   
-  /*---- Set correct status at startup ----*/
+  /*-------- Set correct status at startup --------*/
   int nowTime = (hour() * 60) + minute();
+  Serial.print("nowTime = ");
+  Serial.print(nowTime);
+  Serial.print(" onTime = ");
+  Serial.print(onTime);
+  Serial.print(" offTime = ");
+  Serial.println(offTime);
   if( (nowTime >= onTime) && (nowTime <= offTime) ) {
     allOn();
+    Serial.println("BOOM ON!");
   }
   else {
     allOff();
+    Serial.println("BOSH OFF!");
   }
-
-// ALso make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
-// differnet blink codes for differnet enrrors!
 }
+/*
+Also make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
+differnet blink codes for differnet enrrors!
+*/
 
 void loop() {
   if (timeStatus() != timeNotSet) {
@@ -161,25 +168,33 @@ void hourChime() {
 
 void allOn() {
   lightsOn = true;
-  digitalWrite(USB1, HIGH);
-  delay(del);
-  digitalWrite(USB2, HIGH);
-  delay(del);
-  digitalWrite(USB3, HIGH);
-  delay(del);
-  digitalWrite(USB4, HIGH);
+  for(int i = 0; i <= 3; i++) {
+    digitalWrite(USB[i], HIGH);
+    delay(del);
+  }
 }
+//  digitalWrite(USB1, HIGH);
+//  delay(del);
+//  digitalWrite(USB2, HIGH);
+//  delay(del);
+//  digitalWrite(USB3, HIGH);
+//  delay(del);
+// digitalWrite(USB4, HIGH);
 
 void allOff() {
   lightsOn = false;
-  digitalWrite(USB4, LOW);
-  delay(del);
-  digitalWrite(USB3, LOW);
-  delay(del);
-  digitalWrite(USB2, LOW);
-  delay(del);
-  digitalWrite(USB1, LOW);
+  for(int i = 3; i >= 0; i--) {
+    digitalWrite(USB[i], LOW);
+    delay(del);  
+  }
 }
+//  digitalWrite(USB4, LOW);
+//  delay(del);
+//  digitalWrite(USB3, LOW);
+//  delay(del);
+//  digitalWrite(USB2, LOW);
+//  delay(del);
+//  digitalWrite(USB1, LOW);
 
 /*-------- NTP code ----------*/
 
