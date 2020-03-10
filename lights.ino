@@ -7,8 +7,11 @@
 bool lightsOn = false;
 const int onHour = 6;
 const int onMinute = 0;
+const int onTime = (onHour * 60) + onMinute;
 const int offHour = 22;
 const int offMinute = 37;
+const int offTime = (offHour * 60) + offMinute;
+
 const unsigned long del = 100;
 
 const int USB1 = 4;
@@ -59,6 +62,7 @@ void setup() {
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
+  /*---- Set alarms for clock functionality ----*/
   for(int i = 0; i <= 23; i++) {
     Alarm.alarmRepeat(i, 0, 0, hourChime);
     Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
@@ -66,11 +70,13 @@ void setup() {
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
   }  
   
+  /*---- Set alarms for on and off times ----*/
   Alarm.alarmRepeat(onHour, onMinute, 0, allOn);
   Alarm.alarmRepeat(offHour, offMinute, 0, allOff);
   
-  // LOGIC NEEDS SOME WORK!!!
-  if((hour() > onHour && minute() > onMinute) && (hour() < offHour && minute() < offMinute)) {
+  /*---- Set correct status at startup ----*/
+  int nowTime = (hour() * 60) + minute();
+  if( (nowTime >= onTime) && (nowTime <= offTime) ) {
     allOn();
   }
   else {
@@ -116,66 +122,42 @@ void printDigits(int digits) {
 }
 
 /*-------- Light Control Alarms --------*/
-
 void quarterPastChime() {
   if(lightsOn == true) {
-    allOff();
-    delay(500);
-    allOn();
+    digitalClockDisplay();
     Serial.println("Quarter Past Chime.");
+    chime(1);
   }
 }
 
 void halfPastChime() {
   if(lightsOn == true) {
-    allOff();
-    delay(500);
-    allOn();
-    delay(500);
-    allOff();
-    delay(500);
-    allOn();
     digitalClockDisplay();
     Serial.println("Half Past Chime.");
+    chime(2);
   }
 }
 
 void quarterToChime() {
   if(lightsOn == true) {
-    allOff();
-    delay(500);
-    allOn();
-    delay(500);
-    allOff();
-    delay(500);
-    allOn();
-    delay(500);
-    allOff();
-    delay(500);
-    allOn();
     digitalClockDisplay();
-    Serial.println("Quater to Chime.");
+    Serial.println("Quarter to Chime.");
+    chime(3);
+  }
+}
+
+void chime(int n) {
+  for(int i = 1; i <= n; i++) {
+    allOff();
+    delay(500);
+    allOn();
+    delay(500);
   }
 }
 
 void hourChime() {
   Serial.print("Hour Dongs");
 }
-
-/* dud?
-void lightsTurnOn() {
-  lightsOn = true;
-  allOn();
-  Serial.print("Lights turned on!");
-}
-
-void lightsTurnOff() {
-  lightsOn = false;
-  allOff();
-  Serial.print("Lights turned off!");
-}
-
-*/
 
 void allOn() {
   lightsOn = true;
