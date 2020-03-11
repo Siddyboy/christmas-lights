@@ -4,30 +4,31 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
-bool lightsOn = false;                           // Keep track of lights' status.
 // TODO(SCJK): CAPITALISE CONSTANTS!!!
-const int onHour = 22;                           // Hour for turning lights on.
-const int onMinute = 40;                         // Minute for turning lights on.
-const int onTime = (onHour * 60) + onMinute;     // Minutes past midnight to turn lights on.
+const int ON_HOUR = 22;                             // Hour for turning lights on.
+const int ON_MINUTE = 40;                           // Minute for turning lights on.
+const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
 
-const int offHour = 23;                          // Hour for turning lights off.
-const int offMinute = 26;                        // Minute for turning lights off.
-const int offTime = (offHour * 60) + offMinute;  // Minutes past midnight to turn lights off.
+const int OFF_HOUR = 23;                            // Hour for turning lights off.
+const int OFF_MINUTE = 26;                          // Minute for turning lights off.
+const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
-const unsigned long del = 100;                   // A timing delay.
+const unsigned long DELAY = 100;                    // A timing delay.
 
-const int USB[] = {4, 7, 8, 12};                 // Array of pin numbers for the four relays.
+const int USB[] = {4, 7, 8, 12};                    // Array of pin numbers for the four relays.
 
-char ssid[] = SECRET_SSID;                       // WiFi SSID from arduino_secrets.h
-char pass[] = SECRET_PASS;                       // WiFi passord from arduino_secrets.h
-int status = WL_IDLE_STATUS;                     // WiFi status.
+char ssid[] = SECRET_SSID;                          // WiFi SSID from arduino_secrets.h
+char pass[] = SECRET_PASS;                          // WiFi passord from arduino_secrets.h
+int status = WL_IDLE_STATUS;                        // WiFi status.
 
-unsigned int localPort = 2390;                   // Port for ??????? TODO(SCJK): Comment this properly.
+unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
-//IPAddress timeServer(129, 6, 15, 28);            //time.nist.gov
-IPAddress timeServer(143, 210, 16, 201);         //0.uk.pool.ntp.org
+//IPAddress timeServer(129, 6, 15, 28);             //time.nist.gov
+IPAddress timeServer(143, 210, 16, 201);            //0.uk.pool.ntp.org
 
 WiFiUDP Udp;
+
+bool lightsOn = false;                              // Keep track of lights' status.
 
 void setup() {
   for(int i = 0; i <= 3; i++) {
@@ -69,18 +70,18 @@ void setup() {
   }  
   
   /*-------- Set alarms for on and off times --------*/
-  Alarm.alarmRepeat(onHour, onMinute, 0, allOn);
-  Alarm.alarmRepeat(offHour, offMinute, 0, allOff);
+  Alarm.alarmRepeat(ON_HOUR, ON_MINUTE, 0, allOn);
+  Alarm.alarmRepeat(OFF_HOUR, OFF_MINUTE, 0, allOff);
   
   /*-------- Set correct status at startup --------*/
   int nowTime = (hour() * 60) + minute();
   Serial.print("nowTime = ");
   Serial.print(nowTime);
   Serial.print(" onTime = ");
-  Serial.print(onTime);
+  Serial.print(ON_TIME);
   Serial.print(" offTime = ");
-  Serial.println(offTime);
-  if( (nowTime >= onTime) && (nowTime <= offTime) ) {
+  Serial.println(OFF_TIME);
+  if( (nowTime >= ON_TIME) && (nowTime <= OFF_TIME) ) {
     allOn();
     Serial.println("BOOM ON!");
   }
@@ -170,7 +171,7 @@ void allOn() {
   lightsOn = true;
   for(int i = 0; i <= 3; i++) {
     digitalWrite(USB[i], HIGH);
-    delay(del);
+    delay(DELAY);
   }
 }
 //  digitalWrite(USB1, HIGH);
@@ -185,7 +186,7 @@ void allOff() {
   lightsOn = false;
   for(int i = 3; i >= 0; i--) {
     digitalWrite(USB[i], LOW);
-    delay(del);  
+    delay(DELAY);  
   }
 }
 //  digitalWrite(USB4, LOW);
