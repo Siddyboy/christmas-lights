@@ -13,9 +13,9 @@ const int OFF_HOUR = 23;                            // Hour for turning lights o
 const int OFF_MINUTE = 26;                          // Minute for turning lights off.
 const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
-const unsigned long DELAY = 100;                    // A timing delay.
+const unsigned long SWEEP_DELAY = 100;              // A timing delay to spread energisation of relays. Kinder?
 
-const int USB[] = {4, 7, 8, 12};                    // Array of pin numbers for the four relays.
+const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
 
 char ssid[] = SECRET_SSID;                          // WiFi SSID from arduino_secrets.h
 char pass[] = SECRET_PASS;                          // WiFi passord from arduino_secrets.h
@@ -32,7 +32,7 @@ bool lightsOn = false;                              // Keep track of lights' sta
 
 void setup() {
   for(int i = 0; i <= 3; i++) {
-    pinMode(USB[i], OUTPUT);
+    pinMode(RELAY_PINS[i], OUTPUT);
   }
   
   Serial.begin(9600);
@@ -75,11 +75,11 @@ void setup() {
   
   /*-------- Set correct status at startup --------*/
   int nowTime = (hour() * 60) + minute();
-  Serial.print("nowTime = ");
+  Serial.print(" nowTime = ");
   Serial.print(nowTime);
-  Serial.print(" onTime = ");
+  Serial.print(" ON_TIME = ");
   Serial.print(ON_TIME);
-  Serial.print(" offTime = ");
+  Serial.print(" OFF_TIME = ");
   Serial.println(OFF_TIME);
   if( (nowTime >= ON_TIME) && (nowTime <= OFF_TIME) ) {
     allOn();
@@ -106,6 +106,7 @@ void loop() {
 
 void digitalClockDisplay() {
   // digital clock display of the time
+  // TODO(SCJK) Use printDigits for on and off times too.
   Serial.print(hour());
   printDigits(minute());
   printDigits(second());
@@ -130,6 +131,7 @@ void printDigits(int digits) {
 }
 
 /*-------- Light Control Alarms --------*/
+
 void quarterPastChime() {
   if(lightsOn == true) {
     digitalClockDisplay();
@@ -164,38 +166,40 @@ void chime(int n) {
 }
 
 void hourChime() {
-  Serial.print("Hour Dongs");
+  Serial.print("Hour = ");
+  printDigits(hour());
+  if(hour() > 12) {
+    int dongs = hour() - 12;
+  }
+  else {
+    int dongs = hour();
+  }
+  Serial.print(" Dongs = ");
+  printDigit(dongs);
+  allOff();
+  delay(2000);
+  for(int i = 1; i <= dongs; i++) {
+    //TODO(SCJK): DONGS IN HERE! 
+  }
 }
+
+/*-------- Sweep relays on or off ----------*/
 
 void allOn() {
   lightsOn = true;
   for(int i = 0; i <= 3; i++) {
-    digitalWrite(USB[i], HIGH);
-    delay(DELAY);
+    digitalWrite(RELAY_PINS[i], HIGH);
+    delay(SWEEP_DELAY);
   }
 }
-//  digitalWrite(USB1, HIGH);
-//  delay(del);
-//  digitalWrite(USB2, HIGH);
-//  delay(del);
-//  digitalWrite(USB3, HIGH);
-//  delay(del);
-// digitalWrite(USB4, HIGH);
 
 void allOff() {
   lightsOn = false;
   for(int i = 3; i >= 0; i--) {
-    digitalWrite(USB[i], LOW);
-    delay(DELAY);  
+    digitalWrite(RELAY_PINS[i], LOW);
+    delay(SWEEP_DELAY);  
   }
 }
-//  digitalWrite(USB4, LOW);
-//  delay(del);
-//  digitalWrite(USB3, LOW);
-//  delay(del);
-//  digitalWrite(USB2, LOW);
-//  delay(del);
-//  digitalWrite(USB1, LOW);
 
 /*-------- NTP code ----------*/
 
