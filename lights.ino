@@ -5,8 +5,8 @@
 #include "arduino_secrets.h"
 
 // TODO(SCJK): CAPITALISE CONSTANTS!!!
-const int ON_HOUR = 22;                             // Hour for turning lights on.
-const int ON_MINUTE = 40;                           // Minute for turning lights on.
+const int ON_HOUR = 6;                             // Hour for turning lights on.
+const int ON_MINUTE = 30;                           // Minute for turning lights on.
 const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
 
 const int OFF_HOUR = 23;                            // Hour for turning lights off.
@@ -113,13 +113,12 @@ void digitalClockDisplay() {
   Serial.print(" Status = ");
   Serial.print(lightsOn);
   Serial.print(", On = ");
-  Serial.print(onHour);
-  Serial.print(":");
-  Serial.print(onMinute);
+  Serial.print(ON_HOUR);
+  printDigits(ON_MINUTE);
   Serial.print(", Off = ");
-  Serial.print(offHour);
-  Serial.print(":");
-  Serial.println(offMinute);
+  Serial.print(OFF_HOUR);
+  printDigits(OFF_MINUTE);
+  Serial.println();
 }
 
 void printDigits(int digits) {
@@ -158,43 +157,53 @@ void quarterToChime() {
 
 void chime(int n) {
   for(int i = 1; i <= n; i++) {
-    allOff();
+    sweepOff();
     delay(500);
-    allOn();
+    sweepOn();
     delay(500);
   }
 }
 
 void hourChime() {
+  int dongs = 0;
   Serial.print("Hour = ");
   printDigits(hour());
   if(hour() > 12) {
-    int dongs = hour() - 12;
+    dongs = hour() - 12;
   }
   else {
-    int dongs = hour();
+    dongs = hour();
   }
   Serial.print(" Dongs = ");
-  printDigit(dongs);
-  allOff();
-  delay(2000);
+  printDigits(dongs);
+  delay(10000);
   for(int i = 1; i <= dongs; i++) {
-    //TODO(SCJK): DONGS IN HERE! 
+    Serial.println("DONG!"); 
   }
+}
+
+/*-------- Change lights' status ----------*/
+
+void allOn() {
+  lightsOn = true;
+  sweepOn();
+}
+
+void allOff() {
+  lightsOn = false;
+  sweepOff();
 }
 
 /*-------- Sweep relays on or off ----------*/
 
-void allOn() {
-  lightsOn = true;
+void sweepOn() {
   for(int i = 0; i <= 3; i++) {
     digitalWrite(RELAY_PINS[i], HIGH);
     delay(SWEEP_DELAY);
   }
 }
 
-void allOff() {
-  lightsOn = false;
+void sweepOff() {
   for(int i = 3; i >= 0; i--) {
     digitalWrite(RELAY_PINS[i], LOW);
     delay(SWEEP_DELAY);  
