@@ -13,7 +13,7 @@ const int OFF_HOUR = 23;                            // Hour for turning lights o
 const int OFF_MINUTE = 26;                          // Minute for turning lights off.
 const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
-const unsigned long SWEEP_DELAY = 100;              // A timing delay to spread energisation of relays. Kinder?
+const unsigned long SWEEP_DELAY = 50;              // A timing delay to spread energisation of relays. Kinder?
 
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
 
@@ -165,21 +165,21 @@ void chime(int n) {
 }
 
 void hourChime() {
-  int dongs = 0;
-  Serial.print("Hour = ");
-  printDigits(hour());
-  if(hour() > 12) {
-    dongs = hour() - 12;
-  }
-  else {
-    dongs = hour();
-  }
+  int dongs = hourFormat12();
   Serial.print(" Dongs = ");
-  printDigits(dongs);
-  delay(10000);
+  Serial.println(dongs);
+  delay(1000);
+  sweepOff();
+  delay(2000);
   for(int i = 1; i <= dongs; i++) {
+    sweepOn();
+    delay(200);
+    sweepOff();
+    delay(800);
     Serial.println("DONG!"); 
   }
+  delay(2000);
+  sweepOn();
 }
 
 /*-------- Change lights' status ----------*/
