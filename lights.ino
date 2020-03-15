@@ -4,8 +4,7 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
-// TODO(SCJK): CAPITALISE CONSTANTS!!!
-const int ON_HOUR = 6;                             // Hour for turning lights on.
+const int ON_HOUR = 6;                              // Hour for turning lights on.
 const int ON_MINUTE = 30;                           // Minute for turning lights on.
 const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
 
@@ -13,7 +12,7 @@ const int OFF_HOUR = 23;                            // Hour for turning lights o
 const int OFF_MINUTE = 26;                          // Minute for turning lights off.
 const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
-const unsigned long SWEEP_DELAY = 50;              // A timing delay to spread energisation of relays. Kinder?
+const unsigned long SWEEP_DELAY = 20;               // A timing delay to spread energisation of relays. Kinder?
 
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
 
@@ -105,7 +104,6 @@ void loop() {
 /*-------- Digital Clock Code --------*/
 
 void digitalClockDisplay() {
-  // digital clock display of the time
   // TODO(SCJK) Use printDigits for on and off times too.
   Serial.print(hour());
   printDigits(minute());
@@ -122,7 +120,6 @@ void digitalClockDisplay() {
 }
 
 void printDigits(int digits) {
-  // utility for digital clock display: prints preceding colon and leading 0
   Serial.print(":");
   if(digits < 10)
     Serial.print('0');
