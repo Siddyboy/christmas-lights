@@ -28,6 +28,8 @@ IPAddress timeServer(143, 210, 16, 201);            //0.uk.pool.ntp.org
 WiFiUDP Udp;
 
 bool lightsOn = false;                              // Keep track of lights' status.
+AlarmID_t alarmLightsOn;                            // Alarm ID for turn on time.
+AlarmID_t alarmLightsOff;                           // Alarm ID for turn off time.
 
 void setup() {
   for(int i = 0; i <= 3; i++) {
@@ -69,8 +71,10 @@ void setup() {
   }  
   
   /*-------- Set alarms for on and off times --------*/
-  Alarm.alarmRepeat(ON_HOUR, ON_MINUTE, 0, allOn);
-  Alarm.alarmRepeat(OFF_HOUR, OFF_MINUTE, 0, allOff);
+  alarmLightsOn = Alarm.alarmRepeat(ON_HOUR, ON_MINUTE, 0, allOn);
+  alarmLightsOff = Alarm.alarmRepeat(OFF_HOUR, OFF_MINUTE, 0, allOff);
+  Serial.print(alarmLightsOn);
+  Serial.print(alarmLightsOff);
   
   /*-------- Set correct status at startup --------*/
   int nowTime = (hour() * 60) + minute();
