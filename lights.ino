@@ -5,11 +5,11 @@
 #include "arduino_secrets.h"
 
 const int ON_HOUR = 6;                              // Hour for turning lights on.
-const int ON_MINUTE = 30;                           // Minute for turning lights on.
+const int ON_MINUTE = 25;                           // Minute for turning lights on.
 const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
 
 const int OFF_HOUR = 23;                            // Hour for turning lights off.
-const int OFF_MINUTE = 26;                          // Minute for turning lights off.
+const int OFF_MINUTE = 31;                          // Minute for turning lights off.
 const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
 const unsigned long SWEEP_DELAY = 20;               // A timing delay to spread energisation of relays. Kinder?
@@ -73,24 +73,35 @@ void setup() {
   /*-------- Set alarms for on and off times --------*/
   alarmLightsOn = Alarm.alarmRepeat(ON_HOUR, ON_MINUTE, 0, allOn);
   alarmLightsOff = Alarm.alarmRepeat(OFF_HOUR, OFF_MINUTE, 0, allOff);
-  Serial.print(alarmLightsOn);
-  Serial.print(alarmLightsOff);
+  digitalClockDisplay();
+  Serial.print(" Alarm for lights on set to ID: ");
+  Serial.println(alarmLightsOn);
+  digitalClockDisplay();
+  Serial.print(" Alarm for lights off set to ID: ");
+  Serial.println(alarmLightsOff);
   
   /*-------- Set correct status at startup --------*/
   int nowTime = (hour() * 60) + minute();
+  digitalClockDisplay();
   Serial.print(" nowTime = ");
-  Serial.print(nowTime);
+  Serial.println(nowTime);
+  digitalClockDisplay();
   Serial.print(" ON_TIME = ");
-  Serial.print(ON_TIME);
+  Serial.println(ON_TIME);
+  digitalClockDisplay();
   Serial.print(" OFF_TIME = ");
   Serial.println(OFF_TIME);
+  digitalClockDisplay();
+  Serial.println(" Setting initial status... ");
   if( (nowTime >= ON_TIME) && (nowTime <= OFF_TIME) ) {
     allOn();
-    Serial.println("BOOM ON!");
+    digitalClockDisplay();
+    Serial.println(" ...BOOM ON!");
   }
   else {
     allOff();
-    Serial.println("BOSH OFF!");
+    digitalClockDisplay();
+    Serial.println(" ...BOSH OFF!");
   }
 }
 /*
@@ -101,6 +112,8 @@ differnet blink codes for differnet enrrors!
 void loop() {
   if (timeStatus() != timeNotSet) {
     digitalClockDisplay();
+    statusDisplay();
+    
     Alarm.delay(1000);
   }
 }
@@ -112,23 +125,34 @@ void digitalClockDisplay() {
   Serial.print(hour());
   printDigits(minute());
   printDigits(second());
+}
+
+void printDigits(int digits) {
+  Serial.print(":");
+  if(digits < 10) {
+    Serial.print('0');
+  }
+  Serial.print(digits);
+}
+
+/*-------- Status Display --------*/
+void statusDisplay() {
   Serial.print(" Status = ");
-  Serial.print(lightsOn);
-  Serial.print(", On = ");
+  if(lightsOn == true) {
+    Serial.print("On");
+  }
+  else {
+    Serial.print("Off");
+  }
+  Serial.print(", On @ ");
   Serial.print(ON_HOUR);
   printDigits(ON_MINUTE);
-  Serial.print(", Off = ");
+  Serial.print(", Off @ ");
   Serial.print(OFF_HOUR);
   printDigits(OFF_MINUTE);
   Serial.println();
 }
 
-void printDigits(int digits) {
-  Serial.print(":");
-  if(digits < 10)
-    Serial.print('0');
-  Serial.print(digits);
-}
 
 /*-------- Light Control Alarms --------*/
 
@@ -166,31 +190,41 @@ void chime(int n) {
 }
 
 void hourChime() {
-  int dongs = hourFormat12();
-  Serial.print(" Dongs = ");
-  Serial.println(dongs);
-  delay(1000);
-  sweepOff();
-  delay(2000);
-  for(int i = 1; i <= dongs; i++) {
-    sweepOn();
-    delay(200);
+  if(lightsOn == true) {
+    int dongs = hourFormat12();
+    digitalClockDisplay();
+    Serial.print(" Dongs = ");
+    Serial.println(dongs);
+    delay(1000);
     sweepOff();
-    delay(800);
-    Serial.println("DONG!"); 
+    delay(3000);
+    for(int i = 1; i <= dongs; i++) {
+      sweepOn();
+      delay(200);
+      sweepOff();
+      delay(800);
+      digitalClockDisplay();
+      Serial.println(" DONG!"); 
+    }
+    delay(2000);
+    sweepOn();
   }
-  delay(2000);
-  sweepOn();
 }
 
 /*-------- Change lights' status ----------*/
 
 void allOn() {
+  digitalClockDisplay();
+  Serial.print(" allOn called from alarm ID: ");
+  Serial.println(alarmLightsOn);
   lightsOn = true;
   sweepOn();
 }
 
 void allOff() {
+  digitalClockDisplay();
+  Serial.print(" allOff called from alarm ID: ");
+  Serial.println(alarmLightsOff);
   lightsOn = false;
   sweepOff();
 }
