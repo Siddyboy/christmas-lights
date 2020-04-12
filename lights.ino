@@ -69,7 +69,7 @@ void setup() {
   sayHello();
   digitalClockDisplay();
   Serial.println(" Turn lights off to start");
-  sweepOff(0);
+  sweepLights(0, LOW, false);
     
   /*-------- Set alarms for regular clock functionality --------*/
   
@@ -129,7 +129,7 @@ void loop() {
 /*-------- Hello sequence --------*/
 
 void sayHello() {
-  sweepOff(0);
+  sweepLights(0, LOW, false);
   digitalClockDisplay();
   Serial.println(" Hello there!");
   digitalWrite(RELAY_PINS[0], HIGH);
@@ -142,7 +142,7 @@ void sayHello() {
     digitalWrite(RELAY_PINS[3], CHANGE);
     delay(500);
   }  
-  sweepOff(0);
+  sweepLights(0, LOW, false);
   delay(5000);
 }
 
@@ -210,9 +210,9 @@ void quarterToChime() {
 
 void chime(int n) {
   for(int i = 1; i <= n; i++) {
-    sweepOff(20);
+    sweepLights(20, LOW, false);
     delay(500);
-    sweepOn(20);
+    sweepLights(20, HIGH, true);
     delay(500);
   }
 }
@@ -226,18 +226,18 @@ void hourChime() {
     digitalClockDisplay();
     Serial.print(" Dongs = ");
     Serial.println(dongs);
-    sweepOff(1000);
+    sweepLights(1000, LOW, false);
     delay(3000);
     for(int i = 1; i <= dongs; i++) {
-      sweepOn(20);
+      sweepLights(20, HIGH, true);
       delay(200);
-      sweepOff(20);
+      sweepLights(20, LOW, false);
       delay(800);
       digitalClockDisplay();
       Serial.println(" DONG!"); 
     }
     delay(3000);
-    sweepOn(1000);
+    sweepLights(1000, HIGH, true);
   }
 }
 
@@ -255,7 +255,7 @@ void allOn() {
   }
   
   lightsOn = true;
-  sweepOn(2000);
+  sweepLights(2000, HIGH, false);
   digitalClockDisplay();
   alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, OFF_MINUTE, 0, allOff);
   Serial.print(" Set new 'allOff' alarm, new ID = ");
@@ -274,7 +274,7 @@ void allOff() {
   }
   
   lightsOn = false;
-  sweepOff(2000);
+  sweepLights(2000, LOW, false);
   digitalClockDisplay();
   alarmLightsOn = Alarm.alarmOnce(ON_HOUR, ON_MINUTE, 0, allOn);
   Serial.print(" Set new 'allOn' alarm, new ID = ");
@@ -283,17 +283,18 @@ void allOff() {
 
 /*-------- Sweep relays on or off ----------*/
 
-void sweepOn(int onDelay) {
-  for(int i = 0; i <= 3; i++) {
-    digitalWrite(RELAY_PINS[i], HIGH);
-    delay(onDelay);
+void sweepLights(int sweepDelay, PinStatus STATE, bool sweepUp) {
+  if(sweepUp == true) {
+    for(int i = 0; i <=3; i++) {
+      digitalWrite(RELAY_PINS[i], STATE);
+      delay(sweepDelay);
+    }
   }
-}
-
-void sweepOff(int offDelay) {
-  for(int i = 3; i >= 0; i--) {
-    digitalWrite(RELAY_PINS[i], LOW);
-    delay(offDelay);  
+  else {
+    for(int i = 3; i >= 0; i--) {
+      digitalWrite(RELAY_PINS[i], STATE);
+      delay(sweepDelay);
+    }
   }
 }
 
