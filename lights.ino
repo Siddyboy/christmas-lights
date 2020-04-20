@@ -12,9 +12,12 @@ const int OFF_HOUR = 23;                            // Hour for turning lights o
 const int OFF_MINUTE = 3;                           // Minute for turning lights off.
 const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
 
-const unsigned long SWEEP_DELAY = 20;               // mS. A timing delay to spread energisation of relays. Kinder?
-
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
+
+const PinStatus ON = HIGH;
+const PinStatus OFF = LOW;
+const bool UP = true;
+const bool DOWN = false;
 
 char ssid[] = SECRET_SSID;                          // WiFi SSID from arduino_secrets.h
 char pass[] = SECRET_PASS;                          // WiFi passord from arduino_secrets.h
@@ -69,7 +72,7 @@ void setup() {
   sayHello();
   digitalClockDisplay();
   Serial.println(" Turn lights off to start");
-  sweepLights(0, LOW, false);
+  sweepLights(0, OFF, UP);
     
   /*-------- Set alarms for regular clock functionality --------*/
   
@@ -100,14 +103,14 @@ void setup() {
   Serial.println(OFF_TIME);
   
   if( (nowTime >= ON_TIME) && (nowTime <= OFF_TIME) ) {
-    allOn();
+    switchOn();
     digitalClockDisplay();
-    Serial.println(" Turn lights on because the time is right");
+    Serial.println(" Switch lights on because the time is right");
   }
   else {
-    allOff();
+    switchOff();
     digitalClockDisplay();
-    Serial.println(" Keep lights off because it's not time yet");
+    Serial.println(" Switch lights off because it's not time yet");
   }
 }
 
@@ -129,7 +132,7 @@ void loop() {
 /*-------- Hello sequence --------*/
 
 void sayHello() {
-  sweepLights(0, LOW, false);
+  sweepLights(0, OFF, DOWN);
   digitalClockDisplay();
   Serial.println(" Hello there!");
   digitalWrite(RELAY_PINS[0], HIGH);
@@ -142,7 +145,7 @@ void sayHello() {
     digitalWrite(RELAY_PINS[3], CHANGE);
     delay(500);
   }  
-  sweepLights(0, LOW, false);
+  sweepLights(0, OFF, DOWN);
   delay(5000);
 }
 
@@ -210,9 +213,9 @@ void quarterToChime() {
 
 void chime(int n) {
   for(int i = 1; i <= n; i++) {
-    sweepLights(20, LOW, false);
+    sweepLights(20, OFF, DOWN);
     delay(500);
-    sweepLights(20, HIGH, true);
+    sweepLights(20, ON, UP);
     delay(500);
   }
 }
@@ -226,75 +229,70 @@ void hourChime() {
     digitalClockDisplay();
     Serial.print(" Dongs = ");
     Serial.println(dongs);
-    sweepLights(1000, LOW, false);
+    sweepLights(1000, OFF, DOWN);
     delay(3000);
     for(int i = 1; i <= dongs; i++) {
-      sweepLights(20, HIGH, true);
+      sweepLights(20, ON, UP);
       delay(200);
-      sweepLights(20, LOW, false);
+      sweepLights(20, OFF, DOWN);
       delay(800);
       digitalClockDisplay();
       Serial.println(" DONG!"); 
     }
     delay(3000);
-    sweepLights(1000, HIGH, true);
+    sweepLights(1000, ON, UP);
   }
 }
 
 /*-------- Change lights' status ----------*/
 
-void allOn() {
+void switchOn() {
   digitalClockDisplay();
-    
   if(alarmLightsOn > 0) {
-    Serial.print(" 'allOn' called from alarm ID = ");
+    Serial.print(" 'switchOn' called from alarm ID = ");
     Serial.println(alarmLightsOn);
   }
   else {
-    Serial.println(" 'allOn' called (not by an alarm).");
+    Serial.println(" 'switchOn' called (not by an alarm).");
   }
-  
   lightsOn = true;
-  sweepLights(2000, HIGH, false);
+  sweepLights(2000, ON, UP);
   digitalClockDisplay();
-  alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, OFF_MINUTE, 0, allOff);
-  Serial.print(" Set new 'allOff' alarm, new ID = ");
+  alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, OFF_MINUTE, 0, switchOff);
+  Serial.print(" Set new 'switch off' alarm: ID = ");
   Serial.println(alarmLightsOff);
 }
 
-void allOff() {
+void switchOff() {
   digitalClockDisplay();
-  
   if(alarmLightsOff > 0) {
-    Serial.print(" 'allOff' called from alarm ID = ");
+    Serial.print(" 'switchOff' called from alarm ID = ");
     Serial.println(alarmLightsOff);
   }
   else {
-    Serial.println(" 'allOff' called (not by an alarm).");
+    Serial.println(" 'switchOff' called (not by an alarm).");
   }
-  
   lightsOn = false;
-  sweepLights(2000, LOW, false);
+  sweepLights(2000, OFF, DOWN);
   digitalClockDisplay();
-  alarmLightsOn = Alarm.alarmOnce(ON_HOUR, ON_MINUTE, 0, allOn);
-  Serial.print(" Set new 'allOn' alarm, new ID = ");
+  alarmLightsOn = Alarm.alarmOnce(ON_HOUR, ON_MINUTE, 0, switchOn);
+  Serial.print(" Set new 'switch on' alarm: ID = ");
   Serial.println(alarmLightsOn);
 }
 
-/*-------- Sweep relays on or off ----------*/
+/*-------- Sweep relays on/off and up/down ----------*/
 
 void sweepLights(int sweepDelay, PinStatus STATE, bool sweepUp) {
-  if(sweepUp == true) {
-    for(int i = 0; i <=3; i++) {
-      digitalWrite(RELAY_PINS[i], STATE);
-      delay(sweepDelay);
+  int n;
+  for(int i = 0; i <=3; i++) {
+    if(sweepUp == true) {
+      n = i;
     }
-  }
-  else {
-    for(int i = 3; i >= 0; i--) {
-      digitalWrite(RELAY_PINS[i], STATE);
-      delay(sweepDelay);
+    else {
+      n = 3 - i;
     }
+    digitalWrite(RELAY_PINS[n], STATE);
+    delay(sweepDelay);
   }
 }
 
