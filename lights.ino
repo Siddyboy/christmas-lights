@@ -41,7 +41,7 @@ void setup() {
     pinMode(RELAY_PINS[i], OUTPUT);
   }
   
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   if (WiFi.status() == WL_NO_MODULE) {
     Serial.println("Communication with WiFi module failed!");
