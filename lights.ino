@@ -4,13 +4,15 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
-const int ON_HOUR = 6;                              // Hour for turning lights on.
-const int ON_MINUTE = 10;                           // Minute for turning lights on.
-const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
+const int ON_HOUR = 5;                              // Hour for turning lights on.
+// const int ON_MINUTE = 10;                           // Minute for turning lights on.
+//const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
+const int ON_TIME = ON_HOUR * 60; 
 
-const int OFF_HOUR = 23;                            // Hour for turning lights off.
-const int OFF_MINUTE = 3;                           // Minute for turning lights off.
-const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
+const int OFF_HOUR = 21;                            // Hour for turning lights off.
+//const int OFF_MINUTE = 3;                           // Minute for turning lights off.
+//const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
+const int OFF_TIME = OFF_HOUR * 60;
 
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
 
@@ -18,6 +20,9 @@ const PinStatus ON = HIGH;
 const PinStatus OFF = LOW;
 const bool UP = true;
 const bool DOWN = false;
+
+int onMinute = 0;
+int offMinute = 0;
 
 char ssid[] = SECRET_SSID;                          // WiFi SSID from arduino_secrets.h
 char pass[] = SECRET_PASS;                          // WiFi passord from arduino_secrets.h
@@ -178,10 +183,10 @@ void statusDisplay() {
   }
   Serial.print(", On @ ");
   Serial.print(ON_HOUR);
-  printDigits(ON_MINUTE);
+  printDigits(onMinute);
   Serial.print(", Off @ ");
   Serial.print(OFF_HOUR);
-  printDigits(OFF_MINUTE);
+  printDigits(offMinute);
   Serial.println();
 }
 
@@ -258,7 +263,8 @@ void switchOn() {
   lightsOn = true;
   sweepLights(2000, ON, UP);
   digitalClockDisplay();
-  alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, OFF_MINUTE, 0, switchOff);
+  offMinute = random(0, 60);
+  alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, offMinute, 0, switchOff);
   Serial.print(" Set new 'switch off' alarm: ID = ");
   Serial.println(alarmLightsOff);
 }
@@ -275,7 +281,8 @@ void switchOff() {
   lightsOn = false;
   sweepLights(2000, OFF, DOWN);
   digitalClockDisplay();
-  alarmLightsOn = Alarm.alarmOnce(ON_HOUR, ON_MINUTE, 0, switchOn);
+  onMinute = random(0, 60);
+  alarmLightsOn = Alarm.alarmOnce(ON_HOUR, onMinute, 0, switchOn);
   Serial.print(" Set new 'switch on' alarm: ID = ");
   Serial.println(alarmLightsOn);
 }
