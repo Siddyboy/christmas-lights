@@ -5,14 +5,10 @@
 #include "arduino_secrets.h"
 
 const int ON_HOUR = 5;                              // Hour for turning lights on.
-// const int ON_MINUTE = 10;                           // Minute for turning lights on.
-//const int ON_TIME = (ON_HOUR * 60) + ON_MINUTE;     // Minutes past midnight to turn lights on.
-const int ON_TIME = ON_HOUR * 60; 
+const int ON_TIME = ON_HOUR * 60;                   // Minutes past midnight to turn lights on.
 
 const int OFF_HOUR = 21;                            // Hour for turning lights off.
-//const int OFF_MINUTE = 3;                           // Minute for turning lights off.
-//const int OFF_TIME = (OFF_HOUR * 60) + OFF_MINUTE;  // Minutes past midnight to turn lights off.
-const int OFF_TIME = OFF_HOUR * 60;
+const int OFF_TIME = OFF_HOUR * 60;                 // Minutes past midnight to turn lights off.
 
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
 
@@ -21,8 +17,8 @@ const PinStatus OFF = LOW;
 const bool UP = true;
 const bool DOWN = false;
 
-int onMinute = 0;
-int offMinute = 0;
+int onMinute = 0;                                   // Variable to hold random number of minutes for on time.
+int offMinute = 0;                                  // Variable to hold random number of minutes for on time.
 
 char ssid[] = SECRET_SSID;                          // WiFi SSID from arduino_secrets.h
 char pass[] = SECRET_PASS;                          // WiFi passord from arduino_secrets.h
@@ -187,6 +183,22 @@ void statusDisplay() {
   Serial.print(", Off @ ");
   Serial.print(OFF_HOUR);
   printDigits(offMinute);
+  
+  Serial.print(", Time Status: ");
+  switch (timeStatus()) {
+    case 1:
+      Serial.print("timeNotSet");
+      break;
+    case 2:
+      Serial.print("timeSet");
+      break;
+    case 3:
+      Serial.print("timeNeedsSync");
+      break;
+    default:
+      Serial.print("Unknown State");
+      break;
+  }
   Serial.println();
 }
 
