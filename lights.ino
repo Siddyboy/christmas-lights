@@ -1,6 +1,6 @@
 #include <WiFiNINA.h>
 #include <WiFiUdp.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
@@ -121,7 +121,9 @@ differnet blink codes for differnet enrrors!
 */
 
 void loop() {
-  if (timeStatus() != timeNotSet) {
+  if(timeStatus() != timeNotSet) {
+    Serial.print("Time status is: ");
+    Serial.println(timeStatus());
     digitalClockDisplay();
     statusDisplay();
     digitalWrite(LED_BUILTIN, CHANGE);
@@ -186,13 +188,13 @@ void statusDisplay() {
   
   Serial.print(", Time Status: ");
   switch (timeStatus()) {
-    case 1:
+    case timeNotSet:
       Serial.print("timeNotSet");
       break;
-    case 2:
+    case timeSet:
       Serial.print("timeSet");
       break;
-    case 3:
+    case timeNeedsSync:
       Serial.print("timeNeedsSync");
       break;
     default:
