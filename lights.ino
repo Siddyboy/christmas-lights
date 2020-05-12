@@ -121,13 +121,16 @@ differnet blink codes for differnet enrrors!
 */
 
 void loop() {
-  if(timeStatus() != timeNotSet) {
-    Serial.print("Time status is: ");
-    Serial.println(timeStatus());
+  if (timeStatus() == timeSet) {
     digitalClockDisplay();
     statusDisplay();
     digitalWrite(LED_BUILTIN, CHANGE);
     Alarm.delay(1000);
+  }
+  else {
+    Serial.print("foobar");
+    while(true);
+//TODO(SCJK) error alarm code here
   }
 }
 
