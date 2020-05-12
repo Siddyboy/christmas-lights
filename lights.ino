@@ -120,7 +120,7 @@ Also make lights blink an error code (that looks like nice flashing xmas tree li
 differnet blink codes for differnet enrrors!
 */
 
-void loop() {
+/*void loop() {
   if (timeStatus() == timeSet) {
     digitalClockDisplay();
     statusDisplay();
@@ -132,6 +132,26 @@ void loop() {
     while(true);
 //TODO(SCJK) error alarm code here
   }
+}*/
+
+void loop() {
+  digitalClockDisplay();
+  statusDisplay();
+  switch (timeStatus()) {
+    case timeSet:
+      digitalWrite(LED_BUILTIN, CHANGE);
+      break;
+    case timeNeedsSync:
+      warningFlash(1);
+      break;
+    case timeNotSet:
+      warningFlash(2);
+      break;
+    default:
+      warningFlash(3);
+      break;    
+  }
+  Alarm.delay(1000);
 }
 
 
@@ -205,6 +225,17 @@ void statusDisplay() {
       break;
   }
   Serial.println();
+}
+
+/*-------- Warning Flashes --------*/
+
+void warningFlash(int flashes) {
+  digitalWrite(LED_BUILTIN, LOW);
+  for (int i = 1; i <= flashes*2; i++) {
+    digitalWrite(LED_BUILTIN, CHANGE);
+    delay(50);
+  }
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 /*-------- Light Control Alarms --------*/
