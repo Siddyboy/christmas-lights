@@ -4,6 +4,9 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
+#define LED_BUILTIN 13                              // Setting to 25 will access the onboard LED, but 13 will
+                                                    // operate the pin labelled 13 on the board. Chip 4809.
+
 const int ON_HOUR = 5;                              // Hour for turning lights on.
 const int ON_TIME = ON_HOUR * 60;                   // Minutes past midnight to turn lights on.
 
