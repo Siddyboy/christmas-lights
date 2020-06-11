@@ -29,8 +29,8 @@ int status = WL_IDLE_STATUS;                        // WiFi status.
 
 unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
-//IPAddress timeServer(129, 6, 15, 28);             //time.nist.gov
-IPAddress timeServer(143, 210, 16, 201);            //0.uk.pool.ntp.org
+//const char* ntpServerName = "time.nist.gov";
+const char* ntpServerName = "pool.ntp.org";
 
 WiFiUDP Udp;
 
@@ -48,26 +48,27 @@ void setup() {
   Serial.begin(115200);
 
   if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with WiFi module failed!");
+    Serial.println("Communication with Arduino WiFi module failed!");
     while (true);
   }
   
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.println("Please upgrade the firmware");
+    Serial.println("Please upgrade the Arduino WiFi module firmware.");
   }
   
   while (status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
+    Serial.print("Waiting to connect to WLAN: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
     delay(10000);
   }
   
-  Serial.println("Connected to wifi");
+  Serial.println("Connected to WLAN");
   printWifiStatus();
 
-  Serial.println("\nStarting connection to server...");
+  Serial.print("Starting connection to NTP server at ");
+  Serial.println(ntpServerName);
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
@@ -117,25 +118,6 @@ void setup() {
     Serial.println(" Switch lights off because it's not time yet");
   }
 }
-
-/*
-Also make lights blink an error code (that looks like nice flashing xmas tree lights :) ) when there is a problem with NTP synch or wifi link or whatever.
-differnet blink codes for differnet enrrors!
-*/
-
-/*void loop() {
-  if (timeStatus() == timeSet) {
-    digitalClockDisplay();
-    statusDisplay();
-    digitalWrite(LED_BUILTIN, CHANGE);
-    Alarm.delay(1000);
-  }
-  else {
-    Serial.print("foobar");
-    while(true);
-//TODO(SCJK) error alarm code here
-  }
-}*/
 
 void loop() {
   digitalClockDisplay();
@@ -358,16 +340,27 @@ void sweepLights(int sweepDelay, PinStatus STATE, bool sweepUp) {
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
+IPAddress timeServerIP;  // I think this just sets up the variable name and type for IP
 
 time_t getNtpTime() {
   while (Udp.parsePacket() > 0);
-  Serial.println("Transmit NTP Request");
-  sendNTPpacket(timeServer);
+  int error = WiFi.hostByName(ntpServerName, timeServerIP);
+  if(error == 1) {
+    Serial.print("NTP server pool IP Address resolved to: ");
+    Serial.println(timeServerIP);
+  }
+  else {
+    Serial.print("WiFi host by name error code: ");
+    Serial.println(error);
+  }
+  Serial.println("Transmit NTP request");
+  WiFi.hostByName(ntpServerName, timeServerIP);
+  sendNTPpacket(timeServerIP);
   uint32_t beginWait = millis();
   while (millis() - beginWait < 1500) {
     int size = Udp.parsePacket();
     if (size >= NTP_PACKET_SIZE) {
-      Serial.println("Receive NTP Response");
+      Serial.println("Received NTP response");
       Udp.read(packetBuffer, NTP_PACKET_SIZE);
       unsigned long secsSince1900;
       secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
@@ -377,20 +370,20 @@ time_t getNtpTime() {
       return secsSince1900 - 2208988800UL;
     }
   }
-  Serial.println("No NTP Response :-(");
+  Serial.println("No NTP response :-(");
   return 0;
 }
 
 unsigned long sendNTPpacket(IPAddress & address) {
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
-  packetBuffer[0] = 0b11100011;
-  packetBuffer[1] = 0;
-  packetBuffer[2] = 6;
-  packetBuffer[3] = 0xEC;
-  packetBuffer[12]  = 49;
-  packetBuffer[13]  = 0x4E;
-  packetBuffer[14]  = 49;
-  packetBuffer[15]  = 52;
+  packetBuffer[0]  = 0b11100011;
+  packetBuffer[1]  = 0;
+  packetBuffer[2]  = 6;
+  packetBuffer[3]  = 0xEC;
+  packetBuffer[12] = 49;
+  packetBuffer[13] = 0x4E;
+  packetBuffer[14] = 49;
+  packetBuffer[15] = 52;
   Udp.beginPacket(address, 123);
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
   Udp.endPacket();
@@ -399,17 +392,20 @@ unsigned long sendNTPpacket(IPAddress & address) {
 /*-------- WIFI code --------*/
 
 void printWifiStatus() {
-  Serial.print("SSID: ");
+  Serial.print("  SSID: ");
   Serial.println(WiFi.SSID());
 
   IPAddress ip = WiFi.localIP();
-  Serial.print("IP Address: ");
+  Serial.print("  IP Address: ");
   Serial.println(ip);
 
   long rssi = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
+  Serial.print("  Signal strength (RSSI): ");
   Serial.print(rssi);
   Serial.println(" dBm");
+
+  byte encryption = WiFi.encryptionType();
+  Serial.print("  Encryption type: ");
+  Serial.println(encryption, HEX);
+  Serial.println();
 }
-
-
