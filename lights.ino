@@ -28,8 +28,8 @@ int status = WL_IDLE_STATUS;                        // WiFi status.
 
 unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
-const char* ntpServerName = "time.nist.gov";
-//const char* ntpServerName = "0.pool.ntp.org";
+//const char* ntpServerName = "time.nist.gov";
+const char* ntpServerName = "0.pool.ntp.org";
 
 WiFiUDP Udp;
 
@@ -344,16 +344,35 @@ IPAddress timeServerIP;  // I think this just sets up the variable name and type
 time_t getNtpTime() {
   int error = WiFi.hostByName(ntpServerName, timeServerIP);
   if(error == 1) {
-    Serial.print("NTP server pool IP Address resolved to: ");
+    Serial.print("  NTP server pool IP Address resolved to: ");
     Serial.println(timeServerIP);
   }
   else {
-    Serial.print("WiFi host-by-name error code: ");
+    Serial.print("  WiFi host-by-name error code: ");
     Serial.println(error);
   }
-  while (Udp.parsePacket() > 0);
-  Serial.println("Transmit NTP request");
+  Serial.println("  Transmit NTP request");
+  
   sendNTPpacket(timeServerIP);
+  delay(1000);
+  if (Udp.parsePacket()) {
+    Serial.println("  Received NTP response");
+    Udp.read(packetBuffer, NTP_PACKET_SIZE);
+    unsigned long secsSince1900;
+    secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
+    secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
+    secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
+    secsSince1900 |= (unsigned long)packetBuffer[43];
+    return secsSince1900 - 2208988800UL;
+  }
+  else {
+    Serial.println("  No NTP response :-(");
+    return 0;
+  }
+}
+
+/*
+
   uint32_t beginWait = millis();
   while (millis() - beginWait < 1500) {
     int size = Udp.parsePacket();
@@ -371,6 +390,9 @@ time_t getNtpTime() {
   Serial.println("No NTP response :-(");
   return 0;
 }
+
+*/
+
 
 unsigned long sendNTPpacket(IPAddress & address) {
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
