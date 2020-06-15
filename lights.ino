@@ -4,8 +4,7 @@
 #include <TimeAlarms.h> // Don't forget to change the maximum number of alarms in the header of TimeAlarms.h
 #include "arduino_secrets.h"
 
-#define LED_BUILTIN 13                              // Setting to 25 will access the onboard LED, but 13 will
-                                                    // operate the pin labelled 13 on the board. Chip 4809.
+#define LED_BUILTIN 13                              // Beware LED_BUILTIN is default pin 25 on ATmega4809.
 
 const int ON_HOUR = 5;                              // Hour for turning lights on.
 const int ON_TIME = ON_HOUR * 60;                   // Minutes past midnight to turn lights on.
@@ -29,8 +28,8 @@ int status = WL_IDLE_STATUS;                        // WiFi status.
 
 unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
-//const char* ntpServerName = "time.nist.gov";
-const char* ntpServerName = "pool.ntp.org";
+const char* ntpServerName = "time.nist.gov";
+//const char* ntpServerName = "0.pool.ntp.org";
 
 WiFiUDP Udp;
 
@@ -343,18 +342,17 @@ byte packetBuffer[NTP_PACKET_SIZE];
 IPAddress timeServerIP;  // I think this just sets up the variable name and type for IP
 
 time_t getNtpTime() {
-  while (Udp.parsePacket() > 0);
   int error = WiFi.hostByName(ntpServerName, timeServerIP);
   if(error == 1) {
     Serial.print("NTP server pool IP Address resolved to: ");
     Serial.println(timeServerIP);
   }
   else {
-    Serial.print("WiFi host by name error code: ");
+    Serial.print("WiFi host-by-name error code: ");
     Serial.println(error);
   }
+  while (Udp.parsePacket() > 0);
   Serial.println("Transmit NTP request");
-  WiFi.hostByName(ntpServerName, timeServerIP);
   sendNTPpacket(timeServerIP);
   uint32_t beginWait = millis();
   while (millis() - beginWait < 1500) {
