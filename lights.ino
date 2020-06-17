@@ -29,7 +29,8 @@ int status = WL_IDLE_STATUS;                        // WiFi status.
 unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
 //const char* ntpServerName = "time.nist.gov";
-const char* ntpServerName = "0.pool.ntp.org";
+const char* ntpServerName = "pool.ntp.org";
+//const char* ntpServerName = "time.google.com";
 
 WiFiUDP Udp;
 
@@ -66,8 +67,7 @@ void setup() {
   Serial.println("Connected to WLAN");
   printWifiStatus();
 
-  Serial.print("Starting connection to NTP server at ");
-  Serial.println(ntpServerName);
+  Serial.println("Starting connection to NTP server");
   Udp.begin(localPort);
   setSyncProvider(getNtpTime);
 
@@ -81,7 +81,7 @@ void setup() {
   /*-------- Set alarms for regular clock functionality --------*/
   
   for (int i = 0; i <= 23; i++) {
-    Alarm.alarmRepeat(i, 59, 52, hourChime); // A little early so chime in on the hour.
+    Alarm.alarmRepeat(i, 59, 52, hourChime); // A little early so chime is on the hour.
     Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
     Alarm.alarmRepeat(i, 30, 0, halfPastChime);
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
@@ -193,7 +193,7 @@ void statusDisplay() {
   Serial.print(OFF_HOUR);
   printDigits(offMinute);
   
-  Serial.print(", Time Status: ");
+  Serial.print(", Time status: ");
   switch (timeStatus()) {
     case timeNotSet:
       Serial.print("timeNotSet");
@@ -205,7 +205,7 @@ void statusDisplay() {
       Serial.print("timeNeedsSync");
       break;
     default:
-      Serial.print("Unknown State");
+      Serial.print("Unknown state");
       break;
   }
   Serial.println();
@@ -227,7 +227,7 @@ void warningFlash(int flashes) {
 void quarterPastChime() {
   if (lightsOn == true) {
     digitalClockDisplay();
-    Serial.println(" Quarter Past Chime.");
+    Serial.println(" Quarter-past chime");
     chime(1);
   }
 }
@@ -235,7 +235,7 @@ void quarterPastChime() {
 void halfPastChime() {
   if(lightsOn == true) {
     digitalClockDisplay();
-    Serial.println(" Half Past Chime.");
+    Serial.println(" Half-past chime.");
     chime(2);
   }
 }
@@ -243,7 +243,7 @@ void halfPastChime() {
 void quarterToChime() {
   if(lightsOn == true) {
     digitalClockDisplay();
-    Serial.println(" Quarter to Chime.");
+    Serial.println(" Quarter-to chime.");
     chime(3);
   }
 }
@@ -290,7 +290,7 @@ void switchOn() {
     Serial.println(alarmLightsOn);
   }
   else {
-    Serial.println(" 'switchOn' called (not by an alarm).");
+    Serial.println(" 'switchOn' called (not by an alarm)");
   }
   lightsOn = true;
   sweepLights(2000, ON, UP);
@@ -308,7 +308,7 @@ void switchOff() {
     Serial.println(alarmLightsOff);
   }
   else {
-    Serial.println(" 'switchOff' called (not by an alarm).");
+    Serial.println(" 'switchOff' called (not by an alarm)");
   }
   lightsOn = false;
   sweepLights(2000, OFF, DOWN);
@@ -342,21 +342,31 @@ byte packetBuffer[NTP_PACKET_SIZE];
 IPAddress timeServerIP;  // I think this just sets up the variable name and type for IP
 
 time_t getNtpTime() {
-  int error = WiFi.hostByName(ntpServerName, timeServerIP);
-  if(error == 1) {
-    Serial.print("  NTP server pool IP Address resolved to: ");
-    Serial.println(timeServerIP);
+  int tryIP = 0;
+  int error = 0;
+  while(error != 1 && tryIP < 10) {
+    error = WiFi.hostByName(ntpServerName, timeServerIP);
+    if(error == 1) {
+      Serial.print("NTP server pool '");
+      Serial.print(ntpServerName);
+      Serial.print("' resolved to ");
+      Serial.println(timeServerIP);
+    }
+    else {
+      Serial.print("WiFi host-by-name error code: ");
+      Serial.print(error);
+      Serial.print(", try = ");
+      Serial.println(tryIP);
+    }
+    delay(500);
+    tryIP ++;
   }
-  else {
-    Serial.print("  WiFi host-by-name error code: ");
-    Serial.println(error);
-  }
-  Serial.println("  Transmit NTP request");
-  
+
+  Serial.println("Transmit NTP request");
   sendNTPpacket(timeServerIP);
-  delay(1000);
+  delay(1000);  
   if (Udp.parsePacket()) {
-    Serial.println("  Received NTP response");
+    Serial.println("Received NTP response");
     Udp.read(packetBuffer, NTP_PACKET_SIZE);
     unsigned long secsSince1900;
     secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
@@ -366,33 +376,10 @@ time_t getNtpTime() {
     return secsSince1900 - 2208988800UL;
   }
   else {
-    Serial.println("  No NTP response :-(");
+    Serial.println("No NTP response :-(");
     return 0;
   }
 }
-
-/*
-
-  uint32_t beginWait = millis();
-  while (millis() - beginWait < 1500) {
-    int size = Udp.parsePacket();
-    if (size >= NTP_PACKET_SIZE) {
-      Serial.println("Received NTP response");
-      Udp.read(packetBuffer, NTP_PACKET_SIZE);
-      unsigned long secsSince1900;
-      secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
-      secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
-      secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
-      secsSince1900 |= (unsigned long)packetBuffer[43];
-      return secsSince1900 - 2208988800UL;
-    }
-  }
-  Serial.println("No NTP response :-(");
-  return 0;
-}
-
-*/
-
 
 unsigned long sendNTPpacket(IPAddress & address) {
   memset(packetBuffer, 0, NTP_PACKET_SIZE);
