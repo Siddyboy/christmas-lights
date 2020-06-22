@@ -28,8 +28,8 @@ int status = WL_IDLE_STATUS;                        // WiFi status.
 
 unsigned int localPort = 2390;                      // Port for ??????? TODO(SCJK): Comment this properly.
 
-//const char* ntpServerName = "time.nist.gov";
-const char* ntpServerName = "pool.ntp.org";
+const char* ntpServerName = "time.nist.gov";
+//const char* ntpServerName = "pool.ntp.org";
 //const char* ntpServerName = "time.google.com";
 
 WiFiUDP Udp;
@@ -339,33 +339,31 @@ void sweepLights(int sweepDelay, PinStatus STATE, bool sweepUp) {
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
-IPAddress timeServerIP;  // I think this just sets up the variable name and type for IP
 
 time_t getNtpTime() {
-  int tryIP = 0;
-  int error = 0;
-  while(error != 1 && tryIP < 10) {
-    error = WiFi.hostByName(ntpServerName, timeServerIP);
-    if(error == 1) {
-      Serial.print("NTP server pool '");
-      Serial.print(ntpServerName);
-      Serial.print("' resolved to ");
-      Serial.println(timeServerIP);
-    }
-    else {
-      Serial.print("WiFi host-by-name error code: ");
-      Serial.print(error);
-      Serial.print(", try = ");
-      Serial.println(tryIP);
-    }
-    delay(500);
-    tryIP ++;
-  }
+  IPAddress timeServerIP;
 
+  int error = WiFi.hostByName(ntpServerName, timeServerIP);
+  if(error == 1) {
+    Serial.print("New NTP server IP: ");
+    Serial.println(timeServerIP);
+    Serial.print("Resolved from pool: ");
+    Serial.println(ntpServerName);
+  }
+  else {
+    Serial.print("WiFi host-by-name error code: ");
+    Serial.println(error);
+    Serial.print("Using previous server IP: ");
+    Serial.println(timeServerIP);
+  }
+  
+  while(Udp.parsePacket() > 0) {
+    Serial.println("Doing nothing!");
+  }
   Serial.println("Transmit NTP request");
   sendNTPpacket(timeServerIP);
-  delay(1000);  
-  if (Udp.parsePacket()) {
+  delay(1000);
+  if(Udp.parsePacket()) {
     Serial.println("Received NTP response");
     Udp.read(packetBuffer, NTP_PACKET_SIZE);
     unsigned long secsSince1900;
@@ -375,28 +373,32 @@ time_t getNtpTime() {
     secsSince1900 |= (unsigned long)packetBuffer[43];
     return secsSince1900 - 2208988800UL;
   }
-  else {
-    Serial.println("No NTP response :-(");
-    return 0;
-  }
+  Serial.println("No NTP response :-(");
+  return 0;
 }
 
-unsigned long sendNTPpacket(IPAddress & address) {
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);
-  packetBuffer[0]  = 0b11100011;
-  packetBuffer[1]  = 0;
-  packetBuffer[2]  = 6;
-  packetBuffer[3]  = 0xEC;
+/*-------- Send an NTP request to the time server --------*/
+/* Send the request to the time server at the given       */
+/* address. From TimeNTP_ESP8266WiFi.ino example.         */
+void sendNTPpacket(IPAddress & address) {
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);  // Set all bytes in the buffer to 0
+  // Initialise values needed to form NTP request
+  packetBuffer[0]  = 0b11100011;             // LI, version, mode 
+  packetBuffer[1]  = 0;                      // Stratum, or type of clock
+  packetBuffer[2]  = 6;                      // Polling interval
+  packetBuffer[3]  = 0xEC;                   // Peer clock precision
+  // [Eight bytes (4 to 11) of zero for root delay and root dispersion]
   packetBuffer[12] = 49;
   packetBuffer[13] = 0x4E;
   packetBuffer[14] = 49;
   packetBuffer[15] = 52;
-  Udp.beginPacket(address, 123);
+  // Send a packet to request timestamp
+  Udp.beginPacket(address, 123);             // NTP requests to port 123
   Udp.write(packetBuffer, NTP_PACKET_SIZE);
   Udp.endPacket();
 }
 
-/*-------- WIFI code --------*/
+/*-------- WiFi status code --------*/
 
 void printWifiStatus() {
   Serial.print("  SSID: ");
