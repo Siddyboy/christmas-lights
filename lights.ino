@@ -61,7 +61,10 @@ void setup() {
     Serial.print("Waiting to connect to WLAN: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
-    delay(10000);
+    for(int i = 0; i <= 199; i++) {
+      digitalWrite(LED_BUILTIN, CHANGE);
+      delay(50);
+    }
   }
   
   Serial.println("Connected to WLAN");
