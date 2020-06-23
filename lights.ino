@@ -57,7 +57,7 @@ void setup() {
     Serial.println("Please upgrade the Arduino WiFi module firmware.");
   }
   
-  while (status != WL_CONNECTED) {
+    /*while (status != WL_CONNECTED) {
     Serial.print("Waiting to connect to WLAN: ");
     Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
@@ -65,9 +65,9 @@ void setup() {
       digitalWrite(LED_BUILTIN, CHANGE);
       delay(50);
     }
-  }
+  }*/
   
-  Serial.println("Connected to WLAN");
+  connectWifi();
   printWifiStatus();
 
   Serial.println("Starting connection to NTP server");
@@ -360,12 +360,12 @@ time_t getNtpTime() {
     Serial.println(timeServerIP);
   }
   
-  while(Udp.parsePacket() > 0) {
-    Serial.println("Doing nothing!");
-  }
+  //while(Udp.parsePacket() > 0) {
+  //  Serial.println("Doing nothing!");
+  //}
   Serial.println("Transmit NTP request");
   sendNTPpacket(timeServerIP);
-  delay(1000);
+  delay(1500);
   if(Udp.parsePacket()) {
     Serial.println("Received NTP response");
     Udp.read(packetBuffer, NTP_PACKET_SIZE);
@@ -420,4 +420,19 @@ void printWifiStatus() {
   Serial.print("  Encryption type: ");
   Serial.println(encryption, HEX);
   Serial.println();
+}
+
+/*-------- WiFi connect code --------*/
+
+void connectWifi() {
+  while (status != WL_CONNECTED) {
+    Serial.print("Waiting to connect to WLAN: ");
+    Serial.println(ssid);
+    status = WiFi.begin(ssid, pass);
+    for(int i = 0; i <= 199; i++) {
+      digitalWrite(LED_BUILTIN, CHANGE);
+      delay(50);
+    }
+  Serial.println("Connected to WLAN");
+  }
 }
