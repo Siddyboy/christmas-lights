@@ -32,6 +32,11 @@ const char* ntpServerName = "time.nist.gov";
 //const char* ntpServerName = "pool.ntp.org";
 //const char* ntpServerName = "time.google.com";
 
+IPAddress timeServerIP(129, 6, 15, 28);
+IPAddress oldIP;
+
+int syncInt = 300;
+
 WiFiUDP Udp;
 
 bool lightsOn = false;                              // Keep track of lights' status.
@@ -39,50 +44,26 @@ AlarmID_t alarmLightsOn;                            // Alarm ID for turn on time
 AlarmID_t alarmLightsOff;                           // Alarm ID for turn off time.
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  
-  for (int i = 0; i <= 3; i++) {
-    pinMode(RELAY_PINS[i], OUTPUT);
-  }
-  
+  setupPins();
   Serial.begin(115200);
-
-  if (WiFi.status() == WL_NO_MODULE) {
-    Serial.println("Communication with Arduino WiFi module failed!");
-    while (true);
-  }
-  
-  String fv = WiFi.firmwareVersion();
-  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
-    Serial.println("Please upgrade the Arduino WiFi module firmware.");
-  }
-  
-    /*while (status != WL_CONNECTED) {
-    Serial.print("Waiting to connect to WLAN: ");
-    Serial.println(ssid);
-    status = WiFi.begin(ssid, pass);
-    for(int i = 0; i <= 199; i++) {
-      digitalWrite(LED_BUILTIN, CHANGE);
-      delay(50);
-    }
-  }*/
-  
-  connectWifi();
-  printWifiStatus();
-
-  Serial.println("Starting connection to NTP server");
-  Udp.begin(localPort);
-  setSyncProvider(getNtpTime);
-
-  /*-------- Say hello! and turn lights off (safe state). --------*/
-  
   sayHello();
-  digitalClockDisplay();
-  Serial.println(" Turn lights off to start");
-  sweepLights(0, OFF, UP);
-    
-  /*-------- Set alarms for regular clock functionality --------*/
+  wifiModuleChecks();
+  connectToWlan();
+  printWlanStatus();
+  getNtpServerIP();
+  startSocket();
   
+  digitalClockDisplay();
+  Serial.println(" Set time sync provider.");
+  setSyncProvider(getNtpTime);
+  digitalClockDisplay();
+  Serial.print(" Set time sync interval to ");
+  Serial.print(syncInt);
+  Serial.println(" s");
+  setSyncInterval(syncInt);
+
+  digitalClockDisplay();
+  Serial.println(" Setting up chime alarms.");
   for (int i = 0; i <= 23; i++) {
     Alarm.alarmRepeat(i, 59, 52, hourChime); // A little early so chime is on the hour.
     Alarm.alarmRepeat(i, 15, 0, quarterPastChime);
@@ -90,41 +71,69 @@ void setup() {
     Alarm.alarmRepeat(i, 45, 0, quarterToChime);
   }  
   
-  /*-------- Check on/off times are sensible --------*/
-  
-  // Check on is before off
-  // Check that randomness doesn't make off before on
-  // Anything else?
-  
   /*-------- Set correct status at startup --------*/
-  
+  /*HERE TURN THIS INTO A FUNCTION!!!! TAKES nowTime as arg!*/
   int nowTime = (hour() * 60) + minute();
   digitalClockDisplay();
-  Serial.print(" nowTime = ");
-  Serial.println(nowTime);
+  Serial.print(" Time now is ");
+  Serial.print(nowTime);
+  Serial.println(" min past midnight.");
   digitalClockDisplay();
-  Serial.print(" ON_TIME = ");
-  Serial.println(ON_TIME);
+  Serial.print(" ON_TIME is ");
+  Serial.print(ON_TIME);
+  Serial.println(" min past midnight.");
   digitalClockDisplay();
-  Serial.print(" OFF_TIME = ");
-  Serial.println(OFF_TIME);
+  Serial.print(" OFF_TIME is ");
+  Serial.print(OFF_TIME);
+  Serial.println(" min past midnight.");
   
+  digitalClockDisplay();
   if( (nowTime >= ON_TIME) && (nowTime <= OFF_TIME) ) {
+    Serial.println(" Switch lights on; the time is right.");
     switchOn();
-    digitalClockDisplay();
-    Serial.println(" Switch lights on because the time is right");
   }
   else {
+    Serial.println(" Switch lights off; it's not time yet.");
     switchOff();
-    digitalClockDisplay();
-    Serial.println(" Switch lights off because it's not time yet");
   }
+
 }
 
 void loop() {
-  digitalClockDisplay();
-  statusDisplay();
-  switch (timeStatus()) {
+  //digitalClockDisplay();
+  //statusDisplay();
+  status = WiFi.status();
+  if (status != WL_CONNECTED) {
+    digitalClockDisplay();
+    Serial.println(" WiFi not connected.");
+    wifiModuleChecks();
+    connectToWlan();
+    printWlanStatus();
+  }
+  
+  if (timeStatus() == timeSet) {
+    digitalWrite(LED_BUILTIN, CHANGE);
+  }
+  else {
+    digitalWrite(LED_BUILTIN, LOW);
+    digitalClockDisplay();
+    Serial.println(" Time not set or needs synch.");
+    delay(5000);
+    digitalClockDisplay();
+    Serial.println(" Getting new time.");
+    time_t newTime = getNtpTime();
+    if (newTime != 0) {
+     setTime(newTime);
+     digitalClockDisplay();
+     Serial.println(" New time set."); //NOW NEED TO CHECK IF WE NEED TO TURN ON LIGHTS! INCASE TIME NOT SET FROM START!
+    }
+    else {
+      digitalClockDisplay();
+      Serial.println(" No time returned.");
+    }
+  }
+
+/*  switch (timeStatus()) {
     case timeSet:
       digitalWrite(LED_BUILTIN, CHANGE);
       break;
@@ -138,41 +147,173 @@ void loop() {
       warningFlash(3);
       break;    
   }
+  */
   Alarm.delay(1000);
 }
 
+/*-------- Set up pin types --------*/
+void setupPins() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  for (int i = 0; i <= 3; i++) {
+    pinMode(RELAY_PINS[i], OUTPUT);
+  }
+}
 
 /*-------- Hello sequence --------*/
-
 void sayHello() {
   sweepLights(0, OFF, DOWN);
   digitalClockDisplay();
-  Serial.println(" Hello there!");
+  Serial.println(" USB Christmas Tree Light Controller and Clock by SCJK 2020.");
+  digitalClockDisplay();
+  Serial.println(" https://github.com/Siddyboy/christmas-lights");
   digitalWrite(RELAY_PINS[0], HIGH);
   digitalWrite(RELAY_PINS[2], HIGH);
   delay(500);
-  for(int i = 0; i <= 6; i++) {
+  for(int i = 0; i <= 4; i++) {
     digitalWrite(RELAY_PINS[0], CHANGE);
     digitalWrite(RELAY_PINS[1], CHANGE);
     digitalWrite(RELAY_PINS[2], CHANGE);
     digitalWrite(RELAY_PINS[3], CHANGE);
     delay(500);
   }  
+  digitalClockDisplay();
+  Serial.println(" Turn lights off to start.");
   sweepLights(0, OFF, DOWN);
-  delay(5000);
 }
 
-/*-------- Digital Clock Code --------*/
+/*-------- Just Checks Radio Module --------*/
+/*Only checks presence (via a status check) */
+/*and checks firmware is up to date. Aborts */
+/*if there is a problem.                    */
+void wifiModuleChecks() {
+  digitalClockDisplay();
+  Serial.println(" Finding WiFi module.");
+  int st = WiFi.status();
+  if (st == WL_NO_MODULE) {
+    digitalClockDisplay();
+    Serial.println(" Communication with Arduino WiFi module failed. Abort!");
+    while (true);
+  }
+  digitalClockDisplay();
+  Serial.println(" Found WiFi module.");
+  digitalClockDisplay();
+  Serial.println(" Checking WiFi module firmware.");
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    digitalClockDisplay();
+    Serial.println(" Please upgrade the Arduino WiFi module firmware. Abort!");
+    while(true);
+  }
+  digitalClockDisplay();
+  Serial.print(" WiFi firmware version: ");
+  Serial.println(fv);
+}
 
+/*-------- WLAN connect code --------*/
+void connectToWlan() {
+  digitalClockDisplay();
+  Serial.print(" Connecting to WLAN: ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, pass);
+  while (status != WL_CONNECTED) {
+    status = WiFi.status();
+    digitalWrite(LED_BUILTIN, CHANGE);
+    delay(50);
+  }
+  digitalClockDisplay();
+  Serial.println(" Connected to WLAN");
+}
+
+/*-------- WLAN status code --------*/
+void printWlanStatus() {
+  digitalClockDisplay();
+  Serial.print("  WiFi module status: ");
+  int st = WiFi.status();
+  if (st == WL_IDLE_STATUS) {
+    Serial.println("idle");
+  }
+  else if (st == WL_CONNECTED) {
+    Serial.println("connected");
+  }
+  else {
+    Serial.println("unknown");
+  }
+  digitalClockDisplay();
+  Serial.print("  SSID: ");
+  Serial.println(WiFi.SSID());
+
+  IPAddress ip = WiFi.localIP();
+  digitalClockDisplay();
+  Serial.print("  IP Address: ");
+  Serial.println(ip);
+
+  long rssi = WiFi.RSSI();
+  digitalClockDisplay();
+  Serial.print("  Signal strength (RSSI): ");
+  Serial.print(rssi);
+  Serial.println(" dBm");
+
+  byte enc = WiFi.encryptionType();
+  digitalClockDisplay();
+  Serial.print("  Encryption type: ");
+  if (enc == 4) {
+    Serial.println("CCMP (WPA)");
+  }
+  else {
+    Serial.println("unknown");
+  }
+}
+
+/*-------- Obtain IP for NTP server --------*/
+void getNtpServerIP() {
+  digitalClockDisplay();
+  Serial.println(" Getting NTP server IP address.");
+  oldIP = timeServerIP;
+  int error = WiFi.hostByName(ntpServerName, timeServerIP);
+  digitalClockDisplay();
+  if(error == 1) {
+    Serial.print(" New NTP server IP ");
+    Serial.print(timeServerIP);
+    Serial.print(" resolved from pool ");
+    Serial.println(ntpServerName);
+  }
+  else {
+    Serial.print(" WiFi host-by-name error code: ");
+    Serial.println(error);
+    digitalClockDisplay();
+    Serial.print(" Using previous server IP ");
+    timeServerIP = oldIP;
+    Serial.println(timeServerIP);
+  }
+}
+
+/*-------- Listen on local port --------*/
+void startSocket() {
+  digitalClockDisplay();
+  Serial.print(" Starting socket to listen on local port: ");
+  Serial.println(localPort);
+  int listening = Udp.begin(localPort);
+  if (listening == 1) {
+    digitalClockDisplay();
+    Serial.print(" Listening on local port: ");
+    Serial.println(localPort);
+  }
+  else {
+    Serial.println(" There are no sockets available.");
+    while(true);
+  }
+}
+
+/*-------- Digital Clock Display --------*/
 void digitalClockDisplay() {
-  // TODO(SCJK) Use printDigits for on and off times too.
-  Serial.print(hour());
+  printDigits(hour());
+  Serial.print(":");
   printDigits(minute());
+  Serial.print(":");
   printDigits(second());
 }
 
 void printDigits(int digits) {
-  Serial.print(":");
   if (digits < 10) {
     Serial.print('0');
   }
@@ -211,6 +352,8 @@ void statusDisplay() {
       Serial.print("Unknown state");
       break;
   }
+  Serial.print(" NTP IP = ");
+  Serial.print(timeServerIP);
   Serial.println();
 }
 
@@ -261,26 +404,30 @@ void chime(int n) {
 }
 
 void hourChime() {
+  int dongs = hourFormat12() + 1;  // Corrected because alarm triggered before the hour.
+  if (dongs > 12) {                // Correct the correction for 13 o'clock!
+    dongs = 1;
+  }
+  digitalClockDisplay();
+  Serial.print(" Dongs = ");
+  Serial.println(dongs);
   if(lightsOn == true) {
-    int dongs = hourFormat12() + 1;  // Corrected because alarm triggered before the hour.
-    if (dongs > 12) {                // Correct the correction for 13 o'clock!
-      dongs = 1;
-    }
-    digitalClockDisplay();
-    Serial.print(" Dongs = ");
-    Serial.println(dongs);
     sweepLights(1000, OFF, DOWN);
     delay(3000);
+    digitalClockDisplay();
+    Serial.println(" Donging...");
     for(int i = 1; i <= dongs; i++) {
       sweepLights(20, ON, UP);
       delay(200);
       sweepLights(20, OFF, DOWN);
       delay(800);
-      digitalClockDisplay();
-      Serial.println(" DONG!"); 
     }
     delay(3000);
     sweepLights(1000, ON, UP);
+  }
+  else {
+    digitalClockDisplay();
+    Serial.println(" Dongs are silent.");
   }
 }
 
@@ -289,36 +436,42 @@ void hourChime() {
 void switchOn() {
   digitalClockDisplay();
   if(alarmLightsOn > 0) {
-    Serial.print(" 'switchOn' called from alarm ID = ");
+    Serial.print(" switchOn() called from alarm ID ");
     Serial.println(alarmLightsOn);
   }
   else {
-    Serial.println(" 'switchOn' called (not by an alarm)");
+    Serial.println(" switchOn() called directly.");
   }
   lightsOn = true;
   sweepLights(2000, ON, UP);
   digitalClockDisplay();
   offMinute = random(0, 60);
   alarmLightsOff = Alarm.alarmOnce(OFF_HOUR, offMinute, 0, switchOff);
-  Serial.print(" Set new 'switch off' alarm: ID = ");
+  Serial.print(" New switch-off alarm set for ");
+  Serial.print(OFF_HOUR);
+  printDigits(offMinute);
+  Serial.print(", Alarm ID ");
   Serial.println(alarmLightsOff);
 }
 
 void switchOff() {
   digitalClockDisplay();
   if(alarmLightsOff > 0) {
-    Serial.print(" 'switchOff' called from alarm ID = ");
+    Serial.print(" switchOff() called from alarm ID ");
     Serial.println(alarmLightsOff);
   }
   else {
-    Serial.println(" 'switchOff' called (not by an alarm)");
+    Serial.println(" switchOff() called directly.");
   }
   lightsOn = false;
   sweepLights(2000, OFF, DOWN);
   digitalClockDisplay();
   onMinute = random(0, 60);
   alarmLightsOn = Alarm.alarmOnce(ON_HOUR, onMinute, 0, switchOn);
-  Serial.print(" Set new 'switch on' alarm: ID = ");
+  Serial.print(" New switch-on alarm set for ");
+  Serial.print(ON_HOUR);
+  printDigits(onMinute);
+  Serial.print(", Alarm ID ");
   Serial.println(alarmLightsOn);
 }
 
@@ -338,43 +491,29 @@ void sweepLights(int sweepDelay, PinStatus STATE, bool sweepUp) {
   }
 }
 
+
+
+
 /*-------- NTP code ----------*/
 
 const int NTP_PACKET_SIZE = 48;
 byte packetBuffer[NTP_PACKET_SIZE];
 
 time_t getNtpTime() {
-  IPAddress timeServerIP;
-
-  int error = WiFi.hostByName(ntpServerName, timeServerIP);
-  if(error == 1) {
-    Serial.print("New NTP server IP: ");
-    Serial.println(timeServerIP);
-    Serial.print("Resolved from pool: ");
-    Serial.println(ntpServerName);
-  }
-  else {
-    Serial.print("WiFi host-by-name error code: ");
-    Serial.println(error);
-    Serial.print("Using previous server IP: ");
-    Serial.println(timeServerIP);
-  }
-  
-  //while(Udp.parsePacket() > 0) {
-  //  Serial.println("Doing nothing!");
-  //}
-  Serial.println("Transmit NTP request");
+  Serial.println("Transmit NTP packet.");
   sendNTPpacket(timeServerIP);
   delay(1500);
   if(Udp.parsePacket()) {
-    Serial.println("Received NTP response");
+    Serial.println("Received NTP packet.");
     Udp.read(packetBuffer, NTP_PACKET_SIZE);
-    unsigned long secsSince1900;
-    secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
-    secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
-    secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
-    secsSince1900 |= (unsigned long)packetBuffer[43];
-    return secsSince1900 - 2208988800UL;
+    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+    const unsigned long seventyYears = 2208988800UL;
+    unsigned long epoch = secsSince1900 - seventyYears;
+    Serial.print("New epoch = ");
+    Serial.println(epoch);
+    return epoch;
   }
   Serial.println("No NTP response :-(");
   return 0;
@@ -401,38 +540,3 @@ void sendNTPpacket(IPAddress & address) {
   Udp.endPacket();
 }
 
-/*-------- WiFi status code --------*/
-
-void printWifiStatus() {
-  Serial.print("  SSID: ");
-  Serial.println(WiFi.SSID());
-
-  IPAddress ip = WiFi.localIP();
-  Serial.print("  IP Address: ");
-  Serial.println(ip);
-
-  long rssi = WiFi.RSSI();
-  Serial.print("  Signal strength (RSSI): ");
-  Serial.print(rssi);
-  Serial.println(" dBm");
-
-  byte encryption = WiFi.encryptionType();
-  Serial.print("  Encryption type: ");
-  Serial.println(encryption, HEX);
-  Serial.println();
-}
-
-/*-------- WiFi connect code --------*/
-
-void connectWifi() {
-  while (status != WL_CONNECTED) {
-    Serial.print("Waiting to connect to WLAN: ");
-    Serial.println(ssid);
-    status = WiFi.begin(ssid, pass);
-    for(int i = 0; i <= 199; i++) {
-      digitalWrite(LED_BUILTIN, CHANGE);
-      delay(50);
-    }
-  Serial.println("Connected to WLAN");
-  }
-}
