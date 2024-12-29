@@ -9,7 +9,7 @@
 const int ON_HOUR = 5;                              // Hour for turning lights on.
 const int ON_TIME = ON_HOUR * 60;                   // Minutes past midnight to turn lights on.
 
-const int OFF_HOUR = 21;                            // Hour for turning lights off.
+const int OFF_HOUR = 22;                            // Hour for turning lights off.
 const int OFF_TIME = OFF_HOUR * 60;                 // Minutes past midnight to turn lights off.
 
 const int RELAY_PINS[] = {4, 7, 8, 12};             // Array of pin numbers for the four relays.
@@ -45,7 +45,7 @@ AlarmID_t alarmLightsOff;                           // Alarm ID for turn off tim
 
 void setup() {
   setupPins();
-  Serial.begin(115200);
+  Serial.begin(9600);
   sayHello();
   wifiModuleChecks();
   connectToWlan();
@@ -59,7 +59,7 @@ void setup() {
   digitalClockDisplay();
   Serial.print(" Set time sync interval to ");
   Serial.print(syncInt);
-  Serial.println(" s");
+  Serial.println(" seconds.");
   setSyncInterval(syncInt);
 
   digitalClockDisplay();
@@ -201,12 +201,17 @@ void wifiModuleChecks() {
   String fv = WiFi.firmwareVersion();
   if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
     digitalClockDisplay();
+    Serial.print(" Wifi firmware version ");
+    Serial.print(fv);
+    Serial.println(" is not current.");
+    digitalClockDisplay();
     Serial.println(" Please upgrade the Arduino WiFi module firmware. Abort!");
     while(true);
   }
   digitalClockDisplay();
-  Serial.print(" WiFi firmware version: ");
-  Serial.println(fv);
+  Serial.print(" WiFi firmware version ");
+  Serial.print(fv);
+  Serial.println(" is current.");
 }
 
 /*-------- WLAN connect code --------*/
